@@ -19,42 +19,53 @@ const globalForPrisma = globalThis;
  * Create Prisma client with optimized settings for Supabase
  */
 const createPrismaClient = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     datasources: {
       db: {
         url: process.env.DATABASE_URL,
       },
     },
-    // Optimized for production deployment
+    // VERCEL PRODUCTION FIX: Optimized for serverless functions
     __internal: {
       engine: {
-        // Production-optimized connection settings
-        connectionLimit: process.env.NODE_ENV === 'production' ? 1 : 1,
-        queryTimeout: 60000,
-        transactionTimeout: 30000,
+        // Single connection for Vercel serverless
+        connectionLimit: 1,
+        // Shorter timeouts for serverless
+        queryTimeout: isProduction ? 30000 : 60000,
+        transactionTimeout: isProduction ? 15000 : 30000,
       },
     },
   });
 };
 
 /**
- * FIXED: Singleton pattern to prevent multiple instances in development
- * In production, create new instance each time
- * In development, reuse existing instance to prevent connection leaks
+ * VERCEL PRODUCTION FIX: Optimized client creation pattern
+ * - Production: Always create fresh instances (Vercel serverless best practice)
+ * - Development: Use singleton to prevent connection leaks during hot reload
  */
-const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const prisma = process.env.NODE_ENV === 'production' 
+  ? createPrismaClient()
+  : (globalForPrisma.prisma ?? createPrismaClient());
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Only store in global during development
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
 
 export default prisma;
 
 /**
- * FIXED: Database connection helper with retry logic
- * Handles connection failures gracefully with exponential backoff
+ * VERCEL PRODUCTION FIX: Database connection helper optimized for serverless
+ * Handles connection failures gracefully with faster retry for production
  */
 export async function connectDatabase(retries = 3) {
-  for (let i = 0; i < retries; i++) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const maxRetries = isProduction ? 2 : retries; // Fewer retries in production
+  
+  for (let i = 0; i < maxRetries; i++) {
     try {
       await prisma.$connect();
       console.log('✅ Database connected successfully');
@@ -62,12 +73,12 @@ export async function connectDatabase(retries = 3) {
     } catch (error) {
       console.error(`❌ Database connection attempt ${i + 1} failed:`, error.message);
       
-      if (i === retries - 1) {
-        throw new Error(`Database connection failed after ${retries} attempts: ${error.message}`);
+      if (i === maxRetries - 1) {
+        throw new Error(`Database connection failed after ${maxRetries} attempts: ${error.message}`);
       }
       
-      // Exponential backoff: wait 1s, 2s, 4s...
-      const delay = Math.pow(2, i) * 1000;
+      // Faster backoff for production serverless
+      const delay = isProduction ? 500 * (i + 1) : Math.pow(2, i) * 1000;
       console.log(`⏳ Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

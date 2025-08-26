@@ -17,6 +17,9 @@ export const authOptions = {
       }
     })
   ],
+  secret: process.env.NEXTAUTH_SECRET,
+  // PRODUCTION FIX: Add explicit URL configuration for Vercel
+  url: process.env.NEXTAUTH_URL || process.env.VERCEL_URL,
   callbacks: {
     async jwt({ token, account, profile, trigger, session }) {
       // Handle account switching
@@ -41,44 +44,51 @@ export const authOptions = {
       // Add user info to token and create/update user in database
       if (profile) {
         try {
-          // Find or create user in database
-          let user = await prisma.user.findUnique({
-            where: { email: profile.email }
-          });
-
-          // Check if this is the admin email
+          // PRODUCTION FIX: Add connection timeout for database operations
           const isAdminEmail = profile.email === 'amirabdullah2508@gmail.com';
           
+          // Find or create user in database with timeout
+          let user = await Promise.race([
+            prisma.user.findUnique({
+              where: { email: profile.email }
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Database timeout')), 10000)
+            )
+          ]);
+          
           if (!user) {
-            // Create new user
-            user = await prisma.user.create({
-              data: {
-                email: profile.email,
-                name: profile.name,
-                image: profile.picture,
-                emailVerified: new Date(),
-                role: isAdminEmail ? 'ADMIN' : 'USER'
-              }
-            });
+            // Create new user with admin role if admin email
+            user = await Promise.race([
+              prisma.user.create({
+                data: {
+                  email: profile.email,
+                  name: profile.name,
+                  image: profile.picture,
+                  emailVerified: new Date(),
+                  role: isAdminEmail ? 'ADMIN' : 'USER'
+                }
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database timeout')), 10000)
+              )
+            ]);
           } else {
             // Update existing user - FORCE admin role for admin email
-            user = await prisma.user.update({
-              where: { email: profile.email },
-              data: {
-                name: profile.name,
-                image: profile.picture,
-                emailVerified: new Date(),
-                role: isAdminEmail ? 'ADMIN' : user.role // Force ADMIN role for admin email
-              }
-            });
-          }
-          
-          // Double-check: If this is admin email, ensure role is ADMIN
-          if (isAdminEmail && user.role !== 'ADMIN') {
-            user = await prisma.user.update({
-              where: { email: profile.email },
-              data: { role: 'ADMIN' }
-            });
+            user = await Promise.race([
+              prisma.user.update({
+                where: { email: profile.email },
+                data: {
+                  name: profile.name,
+                  image: profile.picture,
+                  emailVerified: new Date(),
+                  role: isAdminEmail ? 'ADMIN' : user.role
+                }
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database timeout')), 10000)
+              )
+            ]);
           }
 
           // Set the database user ID
@@ -88,36 +98,28 @@ export const authOptions = {
           token.picture = user.image;
           token.role = user.role;
           
-          // Store account in localStorage for account switching
-          if (typeof window !== 'undefined') {
-            const accounts = JSON.parse(localStorage.getItem('userAccounts') || '[]');
-            const existingAccount = accounts.find(acc => acc.email === profile.email);
-            
-            if (!existingAccount) {
-              accounts.push({
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                picture: user.image,
-                lastUsed: new Date().toISOString()
-              });
-              localStorage.setItem('userAccounts', JSON.stringify(accounts));
-            } else {
-              // Update last used time
-              existingAccount.lastUsed = new Date().toISOString();
-              existingAccount.name = user.name;
-              existingAccount.picture = user.image;
-              localStorage.setItem('userAccounts', JSON.stringify(accounts));
-            }
-          }
+          console.log('✅ User authenticated successfully:', {
+            email: user.email,
+            role: user.role,
+            isAdmin: user.role === 'ADMIN'
+          });
+          
         } catch (error) {
-          console.error('Error creating/updating user:', error);
-          // Fallback to profile.sub if database operation fails
+          console.error('❌ Error creating/updating user in database:', error);
+          
+          // PRODUCTION FIX: Enhanced fallback for database failures
+          const isAdminEmail = profile.email === 'amirabdullah2508@gmail.com';
           token.id = profile.sub;
           token.email = profile.email;
           token.name = profile.name;
           token.picture = profile.picture;
-          token.role = 'USER'; // Default role
+          token.role = isAdminEmail ? 'ADMIN' : 'USER'; // Ensure admin gets admin role even if DB fails
+          
+          console.log('⚠️ Using fallback auth for:', {
+            email: profile.email,
+            role: token.role,
+            reason: error.message
+          });
         }
       }
 
@@ -148,16 +150,32 @@ export const authOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Check if this is the admin email and redirect to admin page
-      if (url.includes('amirabdullah2508@gmail.com') || url.includes('admin')) {
-        return `${baseUrl}/admin`;
-      }
+      console.log('🔄 NextAuth redirect:', { url, baseUrl });
+      
+      // PRODUCTION FIX: Handle Vercel URLs properly
+      const productionBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
       
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) {
+        const redirectUrl = `${productionBaseUrl}${url}`;
+        console.log('✅ Redirecting to relative URL:', redirectUrl);
+        return redirectUrl;
+      }
+      
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      try {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(productionBaseUrl);
+        if (urlObj.origin === baseUrlObj.origin) {
+          console.log('✅ Redirecting to same origin:', url);
+          return url;
+        }
+      } catch (e) {
+        console.error('❌ URL parsing error:', e);
+      }
+      
+      console.log('✅ Redirecting to base URL:', productionBaseUrl);
+      return productionBaseUrl;
     }
   },
   pages: {
@@ -170,5 +188,6 @@ export const authOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  // PRODUCTION FIX: Ensure trust host for Vercel
+  trustHost: true,
 };

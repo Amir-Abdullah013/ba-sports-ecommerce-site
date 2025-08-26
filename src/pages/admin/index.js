@@ -38,15 +38,24 @@ const AdminDashboard = () => {
     }
 
     if (status === 'authenticated' && session) {
-      // Check if user is admin by email (bypass role check)
+      // PRODUCTION FIX: Enhanced admin access check
       const isAdminEmail = session.user.email === 'amirabdullah2508@gmail.com';
       const isAdminRole = session.user.role === 'ADMIN';
       
+      console.log('🔍 Admin access check:', {
+        email: session.user.email,
+        role: session.user.role,
+        isAdminEmail,
+        isAdminRole
+      });
+      
       if (!isAdminEmail && !isAdminRole) {
+        console.log('❌ Admin access denied, redirecting to home');
         router.push('/');
         return;
       }
       
+      console.log('✅ Admin access granted');
       setUser(session.user);
       loadDashboardData();
     }
