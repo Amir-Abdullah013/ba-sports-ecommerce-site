@@ -23,15 +23,29 @@ const ProductDetailPage = () => {
   const loadProduct = async () => {
     try {
       setIsLoading(true);
-      const productData = await getProduct(id);
-      if (productData) {
+      console.log('🔍 Loading product:', id);
+      
+      // Direct API call for better error handling
+      const response = await fetch(`/api/products/${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const productData = await response.json();
+      console.log('✅ Product loaded:', productData);
+      
+      if (productData && productData.id) {
         setProduct(productData);
-        loadRelatedProducts(productData.category);
+        // Extract category name properly
+        const categoryName = typeof productData.category === 'object' 
+          ? productData.category.name 
+          : productData.category;
+        loadRelatedProducts(categoryName);
       } else {
-        router.push('/products');
+        throw new Error('Invalid product data received');
       }
     } catch (error) {
-      console.error('Error loading product:', error);
+      console.error('❌ Error loading product:', error);
       router.push('/products');
     } finally {
       setIsLoading(false);
@@ -41,13 +55,19 @@ const ProductDetailPage = () => {
   // ✅ Load related products
   const loadRelatedProducts = async (category) => {
     try {
-      const allProducts = await getProducts();
-      const related = allProducts
-        .filter((p) => p.category === category && p.id !== parseInt(id))
-        .slice(0, 4);
-      setRelatedProducts(related);
+      console.log('🔍 Loading related products for category:', category);
+      
+      // Direct API call for related products
+      const response = await fetch(`/api/products?category=${encodeURIComponent(category)}&limit=4`);
+      if (response.ok) {
+        const data = await response.json();
+        const related = data.products?.filter(p => p.id !== id) || [];
+        console.log('✅ Related products loaded:', related.length);
+        setRelatedProducts(related);
+      }
     } catch (error) {
-      console.error('Error loading related products:', error);
+      console.error('❌ Error loading related products:', error);
+      setRelatedProducts([]);
     }
   };
 
@@ -56,6 +76,36 @@ const ProductDetailPage = () => {
       loadProduct();
     }
   }, [id]);
+
+  // Early return for loading state to prevent errors
+  if (isLoading) {
+    return (
+      <Layout title="Loading... - BA Sports">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading product details...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Early return if no product found
+  if (!product) {
+    return (
+      <Layout title="Product Not Found - BA Sports">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-white text-xl mb-4">Product not found</p>
+            <Link href="/products" className="text-blue-400 hover:text-blue-300">
+              ← Back to Products
+            </Link>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   // ✅ Quantity Change
   const handleQuantityChange = (change) => {
@@ -113,8 +163,9 @@ const ProductDetailPage = () => {
   // ✅ Rating stars
   const renderStars = (rating) => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
+    const numRating = parseFloat(rating || 0);
+    const fullStars = Math.floor(numRating);
+    const hasHalfStar = numRating % 1 !== 0;
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(
@@ -133,7 +184,7 @@ const ProductDetailPage = () => {
       );
     }
 
-    const remainingStars = 5 - Math.ceil(rating);
+    const remainingStars = 5 - Math.ceil(numRating);
     for (let i = 0; i < remainingStars; i++) {
       stars.push(
         <FiStar key={`empty-${i}`} className="w-5 h-5 text-gray-300" />
@@ -209,8 +260,8 @@ const ProductDetailPage = () => {
             <span>/</span>
             <Link href="/products" className="hover:text-blue-400 transition-colors">Products</Link>
             <span>/</span>
-            <Link href={`/products?category=${product.category}`} className="hover:text-blue-400 transition-colors">
-              {product.category}
+            <Link href={`/products?category=${encodeURIComponent(typeof product.category === 'object' ? product.category.name : product.category)}`} className="hover:text-blue-400 transition-colors">
+              {typeof product.category === 'object' ? product.category.name : product.category}
             </Link>
             <span>/</span>
             <span className="text-white">{product.name}</span>
@@ -289,7 +340,7 @@ const ProductDetailPage = () => {
               {/* Category & Featured */}
               <div className="flex items-center space-x-3">
                 <span className="px-3 py-1 bg-blue-500/20 text-blue-300 text-sm font-medium rounded-full border border-blue-500/30">
-                  {product.category}
+                  {typeof product.category === 'object' ? product.category.name : product.category}
                 </span>
                 {product.featured && (
                   <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-sm font-medium rounded-full">
@@ -306,14 +357,14 @@ const ProductDetailPage = () => {
                 <div className="flex items-center space-x-1">
                   {renderStars(product.rating)}
                 </div>
-                <span className="text-white/60">({product.rating} out of 5)</span>
+                <span className="text-white/60">({parseFloat(product.rating || 0).toFixed(1)} out of 5)</span>
               </div>
 
               {/* Price */}
               <div className="flex items-center space-x-4">
-                <span className="text-4xl font-bold text-white">${product.price}</span>
+                <span className="text-4xl font-bold text-white">${parseFloat(product.price || 0).toFixed(2)}</span>
                 {product.originalPrice && (
-                  <span className="text-xl text-white/50 line-through">${product.originalPrice}</span>
+                  <span className="text-xl text-white/50 line-through">${parseFloat(product.originalPrice || 0).toFixed(2)}</span>
                 )}
               </div>
 
@@ -326,7 +377,7 @@ const ProductDetailPage = () => {
                   <>
                     <FiCheck className="text-green-400" />
                     <span className="text-green-400 font-medium">
-                      In Stock ({product.stock} available)
+                      In Stock ({parseInt(product.stock || 0)} available)
                     </span>
                   </>
                 ) : (

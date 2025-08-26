@@ -144,32 +144,21 @@ const AdminProducts = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      console.log('🏷️ Loading categories from database...');
+      const response = await fetch('/api/categories?active=true');
       
       if (response.ok) {
         const data = await response.json();
+        console.log(`✅ Loaded ${data.categories?.length || 0} categories`);
         setCategories(data.categories || []);
       } else {
-        // Use fallback categories if API fails
-        setCategories([
-          { id: 1, name: 'Sports Equipment' },
-          { id: 2, name: 'Fitness Gear' },
-          { id: 3, name: 'Outdoor Sports' },
-          { id: 4, name: 'Team Sports' },
-          { id: 5, name: 'Individual Sports' }
-        ]);
+        console.error('❌ Failed to load categories:', response.status);
+        setCategories([]);
       }
       
     } catch (error) {
-      console.log('Categories error, using fallback');
-      // Set fallback categories if network error
-      setCategories([
-        { id: 1, name: 'Sports Equipment' },
-        { id: 2, name: 'Fitness Gear' },
-        { id: 3, name: 'Outdoor Sports' },
-        { id: 4, name: 'Team Sports' },
-        { id: 5, name: 'Individual Sports' }
-      ]);
+      console.error('❌ Error loading categories:', error);
+      setCategories([]);
     }
   };
 

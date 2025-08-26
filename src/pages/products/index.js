@@ -57,6 +57,27 @@ const ProductsPage = () => {
     }, 300);
   }, [selectedCategory, sortBy, sortOrder]);
 
+  // Load categories from database
+  const loadCategories = useCallback(async () => {
+    try {
+      console.log('🏷️ Loading categories from database...');
+      const response = await fetch('/api/categories?active=true');
+      
+      if (response.ok) {
+        const data = await response.json();
+        const categoryNames = ['All', ...data.categories.map(cat => cat.name)];
+        console.log(`✅ Loaded ${data.categories?.length || 0} categories:`, categoryNames);
+        setCategories(categoryNames);
+      } else {
+        console.error('❌ Failed to load categories:', response.status);
+        setCategories(['All']);
+      }
+    } catch (error) {
+      console.error('❌ Error loading categories:', error);
+      setCategories(['All']);
+    }
+  }, []);
+
   // PERFORMANCE: Optimized product loading with pagination
   const loadProducts = useCallback(async (page = 1, search = '', category = 'All', sort = 'createdAt', order = 'desc') => {
     try {
@@ -94,11 +115,7 @@ const ProductsPage = () => {
         
         console.log(`✅ Products loaded: ${data.products.length} items in ${loadTime}ms`);
         
-        // PERFORMANCE: Extract categories from first page only
-        if (isFirstLoad && data.products.length > 0) {
-          const uniqueCategories = ['All', ...new Set(data.products.map(product => product.category.name))];
-          setCategories(uniqueCategories);
-        }
+              // Categories are loaded separately now
       } else {
         console.error('❌ Failed to load products:', response.status);
         setProducts([]);
@@ -115,7 +132,8 @@ const ProductsPage = () => {
   // PERFORMANCE: Initial load
   useEffect(() => {
     loadProducts(1, searchQuery, selectedCategory, sortBy, sortOrder);
-  }, [selectedCategory, sortBy, sortOrder]);
+    loadCategories();
+  }, [selectedCategory, sortBy, sortOrder, loadCategories, loadProducts]);
 
   // PERFORMANCE: Debounced search effect
   useEffect(() => {

@@ -165,6 +165,23 @@ export default async function handler(req, res) {
     const estimatedDelivery = new Date();
     estimatedDelivery.setDate(estimatedDelivery.getDate() + 3 + Math.floor(Math.random() * 5));
 
+    // FIXED: Try to find existing user by email to link the order
+    let userId = null;
+    try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: customerEmail.trim().toLowerCase() },
+        select: { id: true }
+      });
+      if (existingUser) {
+        userId = existingUser.id;
+        console.log('👤 Found existing user for order:', userId);
+      } else {
+        console.log('👤 No existing user found for email:', customerEmail);
+      }
+    } catch (userLookupError) {
+      console.warn('⚠️ User lookup failed, proceeding without userId:', userLookupError.message);
+    }
+
     console.log('🔄 Creating order in database...');
 
     // FIXED: Use database transaction to ensure data integrity
@@ -173,6 +190,7 @@ export default async function handler(req, res) {
       const order = await tx.order.create({
         data: {
           orderNumber,
+          userId, // Link to user if found
           customerName: customerName.trim(),
           customerEmail: customerEmail.trim().toLowerCase(),
           customerPhone: customerPhone.trim(),

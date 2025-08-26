@@ -26,12 +26,11 @@ const createPrismaClient = () => {
         url: process.env.DATABASE_URL,
       },
     },
-    // FIXED: Connection pool settings optimized for Supabase + PgBouncer
+    // Optimized for production deployment
     __internal: {
       engine: {
-        // Enable connection pooling
-        connectionLimit: 1,
-        // Timeout settings
+        // Production-optimized connection settings
+        connectionLimit: process.env.NODE_ENV === 'production' ? 1 : 1,
         queryTimeout: 60000,
         transactionTimeout: 30000,
       },

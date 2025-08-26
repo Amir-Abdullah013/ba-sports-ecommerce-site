@@ -90,7 +90,8 @@ async function getProducts(req, res, startTime) {
           description: true,
           price: true,
           originalPrice: true,
-          image: true, // Single primary image only
+          image: true, // Primary image
+          images: true, // Additional images for hover functionality
           stock: true,
           rating: true,
           reviewCount: true,

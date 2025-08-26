@@ -1,11 +1,111 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FiStar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
-const ProductCard = ({ product, onAddToCart }) => {
+const ProductCard = ({ product, onAddToCart, viewMode = 'grid' }) => {
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const intervalRef = useRef(null);
+
+  // Get product images array
+  const getProductImages = () => {
+    const images = [];
+    
+    // Add main image if exists
+    if (product.image && product.image.trim()) {
+      images.push(product.image);
+    }
+    
+    // Add additional images if they exist
+    if (product.images) {
+      try {
+        let additionalImages = [];
+        if (typeof product.images === 'string' && product.images.trim()) {
+          // Try to parse JSON string
+          if (product.images.startsWith('[') || product.images.startsWith('{')) {
+            additionalImages = JSON.parse(product.images);
+          } else {
+            // If it's a single URL string, treat it as an image
+            additionalImages = [product.images];
+          }
+        } else if (Array.isArray(product.images)) {
+          additionalImages = product.images;
+        }
+        
+        // Filter out empty strings and duplicates
+        if (Array.isArray(additionalImages)) {
+          additionalImages.forEach(img => {
+            if (img && typeof img === 'string' && img.trim() && !images.includes(img)) {
+              images.push(img);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Error parsing product images:', e);
+        // If JSON parsing fails and it's a string, treat as single image
+        if (typeof product.images === 'string' && product.images.trim() && !images.includes(product.images)) {
+          images.push(product.images);
+        }
+      }
+    }
+    
+    // Return at least one placeholder if no valid images
+    return images.length > 0 ? images : [product.image || '/placeholder-image.jpg'];
+  };
+
+  const productImages = getProductImages();
+  const currentImage = productImages[currentImageIndex] || productImages[0];
+
+  // Preload images for smooth transitions
+  useEffect(() => {
+    if (productImages.length > 1) {
+      productImages.forEach((img, index) => {
+        if (index > 0) { // Skip first image as it's already loaded
+          const image = new Image();
+          image.src = img;
+        }
+      });
+    }
+  }, [productImages]);
+
+  // Handle hover start - start image cycling
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (productImages.length > 1) {
+      // Start cycling immediately, then continue at intervals
+      setCurrentImageIndex(1 % productImages.length);
+      intervalRef.current = setInterval(() => {
+        setCurrentImageIndex(prev => (prev + 1) % productImages.length);
+      }, 800); // Change image every 800ms for responsive feel
+    }
+  };
+
+  // Handle hover end - stop cycling and reset to first image
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    // Smooth reset to first image
+    setTimeout(() => {
+      if (!isHovered) { // Only reset if still not hovered
+        setCurrentImageIndex(0);
+      }
+    }, 100);
+  };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const renderStars = (rating) => {
     const stars = [];
@@ -44,9 +144,17 @@ const ProductCard = ({ product, onAddToCart }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="group relative bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
     >
-      <Link href={`/products/${product.id}`} className="block">
+      <Link 
+        href={`/products/${product.id}`} 
+        className="block cursor-pointer"
+        onClick={() => {
+          // Product navigation will be handled by Next.js Link
+        }}
+      >
         <div className="flex flex-col h-full">
           <div className="relative aspect-square overflow-hidden bg-gray-100">
             {isImageLoading && (
@@ -55,19 +163,33 @@ const ProductCard = ({ product, onAddToCart }) => {
               </div>
             )}
             
-            {!imageError && product.image && (
+            {!imageError && currentImage && (
               <img
-                src={product.image}
+                src={currentImage}
                 alt={product.name}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                className={`w-full h-full object-cover transition-all duration-500 ${
                   isImageLoading ? 'opacity-0' : 'opacity-100'
-                }`}
+                } ${isHovered ? 'scale-105' : 'scale-100'}`}
                 onLoad={() => setIsImageLoading(false)}
                 onError={() => {
                   setImageError(true);
                   setIsImageLoading(false);
                 }}
               />
+            )}
+
+            {/* Image indicator dots */}
+            {productImages.length > 1 && (
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {productImages.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
             )}
 
             {imageError && (

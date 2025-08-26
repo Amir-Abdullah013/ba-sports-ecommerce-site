@@ -33,6 +33,7 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [showAccountSwitcher, setShowAccountSwitcher] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [categories, setCategories] = useState([]);
   const router = useRouter();
   const { data: session, status } = useSession();
   const { hasMultipleAccounts, otherAccounts, isLoading } = useAccounts();
@@ -45,6 +46,23 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Load categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await fetch('/api/categories?active=true');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data.categories || []);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    
+    loadCategories();
   }, []);
 
   // Get user from session instead of localStorage
@@ -61,6 +79,25 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
       }
     }
   }, [user?.id]);
+
+  // Category icons mapping
+  const getCategoryIcon = (categoryName) => {
+    const iconMap = {
+      'Football': '🏈',
+      'Basketball': '🏀', 
+      'Cricket': '🏏',
+      'Badminton': '🏸',
+      'Running': '🏃',
+      'Baseball': '⚾',
+      'Soccer': '⚽',
+      'Volleyball': '🏐',
+      'Sports Equipment': '🎯',
+      'Tennis': '🎾',
+      'Swimming': '🏊',
+      'Fitness': '💪'
+    };
+    return iconMap[categoryName] || '🏅';
+  };
 
   // Listen for profile image updates
   useEffect(() => {
@@ -143,16 +180,11 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
       href: '/products', 
       label: 'Products',
       hasDropdown: true,
-      dropdownItems: [
-        { href: '/products?category=Football', label: 'Football', icon: '⚽' },
-        { href: '/products?category=Basketball', label: 'Basketball', icon: '🏀' },
-        { href: '/products?category=Tennis', label: 'Tennis', icon: '🎾' },
-        { href: '/products?category=Soccer', label: 'Soccer', icon: '⚽' },
-        { href: '/products?category=Baseball', label: 'Baseball', icon: '⚾' },
-        { href: '/products?category=Volleyball', label: 'Volleyball', icon: '🏐' },
-        { href: '/products?category=Swimming', label: 'Swimming', icon: '🏊' },
-        { href: '/products?category=Running', label: 'Running', icon: '🏃' }
-      ]
+      dropdownItems: categories.map(category => ({
+        href: `/products?category=${encodeURIComponent(category.name)}`,
+        label: category.name,
+        icon: getCategoryIcon(category.name)
+      }))
     },
     ...(session?.user ? [{
       href: '/order-history', 
@@ -507,12 +539,7 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
                     <FiUser className="mr-3" size={16} />
                     My Profile
                   </Link>
-                  <Link href="/gmail" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <svg className="mr-3 w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.910 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/>
-                    </svg>
-                    Gmail Access
-                  </Link>
+                  
                   <Link href="/cart" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <FiShoppingCart className="mr-3" size={16} />
                     My Cart ({cartItems.reduce((total, item) => total + item.quantity, 0)})
@@ -713,19 +740,20 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
                 {/* Quick Categories */}
                 {!searchQuery && (
                   <div className="mt-6">
-                    <p className="text-sm font-medium text-gray-700 mb-3">Popular Categories</p>
+                    <p className="text-sm font-medium text-gray-700 mb-3">Browse Categories</p>
                     <div className="flex flex-wrap gap-2">
-                      {['Fitness', 'Outdoor', 'Team Sports', 'Water Sports', 'Winter Sports'].map((category) => (
+                      {categories.slice(0, 6).map((category) => (
                         <button
-                          key={category}
+                          key={category.id}
                           onClick={() => {
-                            setSearchQuery(category);
+                            setSearchQuery('');
                             setIsSearchOpen(false);
-                            router.push(`/products?search=${encodeURIComponent(category)}`);
+                            router.push(`/products?category=${encodeURIComponent(category.name)}`);
                           }}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors text-sm"
+                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors text-sm flex items-center gap-1"
                         >
-                          {category}
+                          <span>{getCategoryIcon(category.name)}</span>
+                          {category.name}
                         </button>
                       ))}
                     </div>
