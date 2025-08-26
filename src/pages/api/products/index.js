@@ -14,12 +14,15 @@ export const config = {
   runtime: 'nodejs',
 };
 
-import prisma from '../../../lib/prisma';
+import prisma, { connectDatabase } from '../../../lib/prisma';
 
 export default async function handler(req, res) {
   const startTime = Date.now();
   
   try {
+    // PRODUCTION FIX: Ensure database connection
+    await connectDatabase(2); // Quick retry for production
+    
     switch (req.method) {
       case 'GET':
         return await getProducts(req, res, startTime);
@@ -31,6 +34,16 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('❌ Products API Error:', error);
+    
+    // PRODUCTION FIX: Better error handling for database connection issues
+    if (error.message.includes('connection') || error.message.includes('timeout')) {
+      return res.status(503).json({ 
+        error: 'Database temporarily unavailable', 
+        message: 'Please try again in a moment',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
+    }
+    
     return res.status(500).json({ 
       error: 'Internal server error', 
       details: process.env.NODE_ENV === 'development' ? error.message : undefined 

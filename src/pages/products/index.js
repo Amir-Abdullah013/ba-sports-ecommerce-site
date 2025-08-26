@@ -210,8 +210,8 @@ const ProductsPage = () => {
         <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
         <div className="h-6 bg-gray-300 rounded w-1/2"></div>
       </div>
-    </div>
-  );
+      </div>
+    );
 
   return (
     <Layout title={`Products - BA Sports`}>
@@ -248,10 +248,10 @@ const ProductsPage = () => {
                 <div className="flex items-center space-x-2">
                   <span>Page {currentPage} of {totalPages}</span>
                 </div>
-              </div>
+            </div>
             </motion.div>
           </div>
-          
+
           {/* Decorative elements */}
           <div className="absolute top-10 left-10 w-20 h-20 bg-white opacity-10 rounded-full"></div>
           <div className="absolute bottom-10 right-10 w-32 h-32 bg-white opacity-5 rounded-full"></div>
@@ -265,11 +265,11 @@ const ProductsPage = () => {
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
+                <input
+                  type="text"
                     placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {searchQuery && (
@@ -284,7 +284,7 @@ const ProductsPage = () => {
               </div>
 
               {/* Filters */}
-              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                 {/* Category Filter */}
                 <select
                   value={selectedCategory}
@@ -296,8 +296,8 @@ const ProductsPage = () => {
                   ))}
                 </select>
 
-                {/* Sort */}
-                <select
+                  {/* Sort */}
+                  <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
                     const [field, direction] = e.target.value.split('-');
@@ -313,7 +313,7 @@ const ProductsPage = () => {
                   <option value="price-asc">Price Low-High</option>
                   <option value="price-desc">Price High-Low</option>
                   <option value="rating-desc">Highest Rated</option>
-                </select>
+                  </select>
 
                 {/* View Mode */}
                 <div className="flex border border-gray-300 rounded-lg overflow-hidden">
@@ -331,70 +331,70 @@ const ProductsPage = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+                        </div>
+                      </div>
 
           {/* Products Grid */}
           <div ref={animationContainerRef}>
-            {isLoading ? (
+                {isLoading ? (
               // PERFORMANCE: Loading skeletons
               <div className={`grid gap-6 ${
-                viewMode === 'grid' 
+                      viewMode === 'grid' 
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                  : 'grid-cols-1'
+                        : 'grid-cols-1'
               }`}>
                 {Array.from({ length: 8 }).map((_, index) => (
                   <ProductSkeleton key={index} />
                 ))}
-              </div>
+                          </div>
             ) : displayProducts.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-gray-400 mb-4">
                   <FiSearch className="w-16 h-16 mx-auto" />
-                </div>
+                        </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
                 <p className="text-gray-600 mb-4">
                   Try adjusting your search or filters
                 </p>
                 <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedCategory('All');
-                  }}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCategory('All');
+                      }}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Clear Filters
+                    >
+                      Clear Filters
                 </button>
               </div>
-            ) : (
+                ) : (
               <>
-                <motion.div
-                  layout
+                  <motion.div
+                    layout
                   className={`grid gap-6 ${
-                    viewMode === 'grid' 
+                            viewMode === 'grid' 
                       ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                      : 'grid-cols-1'
-                  }`}
+                              : 'grid-cols-1'
+                          }`}
                 >
                   <AnimatePresence>
                     {displayProducts.map((product) => (
-                      <motion.div
-                        key={product.id}
-                        layout
+                              <motion.div
+                                key={product.id}
+                                layout
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <ProductCard 
-                          product={product} 
+                                  <ProductCard
+                                    product={product}
                           viewMode={viewMode}
                           onAddToCart={handleAddToCart}
-                        />
-                      </motion.div>
+                                  />
+                              </motion.div>
                     ))}
-                  </AnimatePresence>
-                </motion.div>
+                          </AnimatePresence>
+                        </motion.div>
 
                 {/* PERFORMANCE: Load More / Pagination */}
                 {totalPages > 1 && (
@@ -422,7 +422,7 @@ const ProductsPage = () => {
                         Showing all {totalCount} products
                       </p>
                     )}
-                  </div>
+                    </div>
                 )}
               </>
             )}

@@ -18,8 +18,8 @@ export const authOptions = {
     })
   ],
   secret: process.env.NEXTAUTH_SECRET,
-  // PRODUCTION FIX: Add explicit URL configuration for Vercel
-  url: process.env.NEXTAUTH_URL || process.env.VERCEL_URL,
+  // PRODUCTION FIX: Explicit URL configuration for Vercel with proper protocol
+  url: process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
   callbacks: {
     async jwt({ token, account, profile, trigger, session }) {
       // Handle account switching
@@ -47,13 +47,16 @@ export const authOptions = {
           // PRODUCTION FIX: Add connection timeout for database operations
           const isAdminEmail = profile.email === 'amirabdullah2508@gmail.com';
           
+          // PRODUCTION FIX: Shorter timeout for serverless functions
+          const dbTimeout = process.env.NODE_ENV === 'production' ? 5000 : 10000;
+          
           // Find or create user in database with timeout
           let user = await Promise.race([
             prisma.user.findUnique({
               where: { email: profile.email }
             }),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Database timeout')), 10000)
+              setTimeout(() => reject(new Error('Database timeout')), dbTimeout)
             )
           ]);
           
@@ -70,7 +73,7 @@ export const authOptions = {
                 }
               }),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database timeout')), 10000)
+                setTimeout(() => reject(new Error('Database timeout')), dbTimeout)
               )
             ]);
           } else {
@@ -86,7 +89,7 @@ export const authOptions = {
                 }
               }),
               new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database timeout')), 10000)
+                setTimeout(() => reject(new Error('Database timeout')), dbTimeout)
               )
             ]);
           }
@@ -190,4 +193,40 @@ export const authOptions = {
   },
   // PRODUCTION FIX: Ensure trust host for Vercel
   trustHost: true,
+  // PRODUCTION FIX: Add explicit configuration for better error handling
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log('✅ User signed in:', { 
+        email: user.email, 
+        provider: account?.provider,
+        role: user.role 
+      });
+    },
+    async signOut({ token }) {
+      console.log('👋 User signed out:', { email: token?.email });
+    },
+    async createUser({ user }) {
+      console.log('🆕 New user created:', { email: user.email });
+    },
+    async session({ session, token }) {
+      console.log('🔄 Session accessed:', { 
+        email: session.user?.email,
+        role: session.user?.role 
+      });
+    }
+  },
+  // PRODUCTION FIX: Add logger for debugging
+  logger: {
+    error(code, metadata) {
+      console.error('❌ NextAuth Error:', { code, metadata });
+    },
+    warn(code) {
+      console.warn('⚠️ NextAuth Warning:', code);
+    },
+    debug(code, metadata) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🐛 NextAuth Debug:', { code, metadata });
+      }
+    }
+  }
 };

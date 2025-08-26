@@ -247,6 +247,38 @@ const Footer = () => {
             </Link>
           </div>
         </motion.div>
+
+        {/* Developer Branding - Subtle & Professional */}
+        <motion.div
+          variants={itemVariants}
+          className="mt-6 pt-4 border-t border-gray-800/50 flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-8"
+        >
+          <div className="text-xs text-gray-500 text-center sm:text-left">
+            Website developed by{" "}
+            <span className="text-gray-400 font-medium">Amir Abdullah</span>
+          </div>
+          <div className="flex items-center space-x-4 text-xs text-gray-500">
+            <div className="flex items-center space-x-1 group">
+              <FiMail className="w-3 h-3 group-hover:text-blue-400 transition-colors duration-200" />
+              <a
+                href="mailto:thecodeamir@gmail.com"
+                className="hover:text-blue-400 transition-colors duration-200"
+              >
+                thecodeamir@gmail.com
+              </a>
+            </div>
+            <div className="text-gray-600">•</div>
+            <div className="flex items-center space-x-1 group">
+              <FiPhone className="w-3 h-3 group-hover:text-blue-400 transition-colors duration-200" />
+              <a
+                href="tel:+923246800889"
+                className="hover:text-blue-400 transition-colors duration-200"
+              >
+                03246800889
+              </a>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
     </footer>
   );

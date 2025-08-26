@@ -43,17 +43,23 @@ const createPrismaClient = () => {
 
 /**
  * VERCEL PRODUCTION FIX: Optimized client creation pattern
- * - Production: Always create fresh instances (Vercel serverless best practice)
+ * - Production: Create fresh instances with connection pooling
  * - Development: Use singleton to prevent connection leaks during hot reload
  */
-const prisma = process.env.NODE_ENV === 'production' 
-  ? createPrismaClient()
-  : (globalForPrisma.prisma ?? createPrismaClient());
+const createPrismaInstance = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // Production: Always create fresh instances for Vercel serverless
+    return createPrismaClient();
+  } else {
+    // Development: Use singleton pattern
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = createPrismaClient();
+    }
+    return globalForPrisma.prisma;
+  }
+};
 
-// Only store in global during development
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+const prisma = createPrismaInstance();
 
 export default prisma;
 

@@ -3,19 +3,40 @@ export const config = {
   runtime: 'nodejs',
 };
 
-import prisma from '../../../lib/prisma';
+import prisma, { connectDatabase } from '../../../lib/prisma';
 
 export default async function handler(req, res) {
   const { method } = req;
 
-  switch (method) {
-    case 'GET':
-      return getCategories(req, res);
-    case 'POST':
-      return createCategory(req, res);
-    default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      return res.status(405).json({ error: `Method ${method} Not Allowed` });
+  try {
+    // PRODUCTION FIX: Ensure database connection
+    await connectDatabase(2);
+    
+    switch (method) {
+      case 'GET':
+        return getCategories(req, res);
+      case 'POST':
+        return createCategory(req, res);
+      default:
+        res.setHeader('Allow', ['GET', 'POST']);
+        return res.status(405).json({ error: `Method ${method} Not Allowed` });
+    }
+  } catch (error) {
+    console.error('❌ Categories API Error:', error);
+    
+    // PRODUCTION FIX: Better error handling for database connection issues
+    if (error.message.includes('connection') || error.message.includes('timeout')) {
+      return res.status(503).json({ 
+        error: 'Database temporarily unavailable', 
+        message: 'Please try again in a moment',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Internal server error', 
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 }
 
