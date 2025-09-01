@@ -1,6 +1,10 @@
 # 🚨 URGENT: Fix Your Vercel Deployment
 
-Your site is still showing 500 errors because the environment variables haven't been updated in Vercel yet. Here's exactly what you need to do:
+Your site is showing 500 errors due to two issues:
+1. **Environment variables** haven't been updated in Vercel yet
+2. **Prisma Client** is outdated because Vercel isn't running `prisma generate`
+
+I've fixed both issues. Here's exactly what you need to do:
 
 ## Step 1: Check Current Environment Status
 
@@ -60,23 +64,30 @@ Environment: Production
 - `NEXT_PUBLIC_GOOGLE_CLIENT_SECRET`
 - `NEXT_PUBLIC_NODE_ENV`
 
-## Step 3: Redeploy Your Application
+## Step 3: Deploy the Fixed Code
 
-After updating the environment variables:
+I've fixed the Prisma build issue by updating:
+- `package.json` - Added `prisma generate` to build scripts
+- `vercel.json` - Added Vercel-specific Prisma configuration
+
+Now deploy the changes:
+
+```bash
+git add .
+git commit -m "fix: add prisma generate to build process and update env vars"
+git push origin main
+```
+
+## Step 4: Alternative - Force Redeploy
+
+If you prefer to redeploy without git push:
 
 1. **Option A - Force Redeploy:**
    - In Vercel dashboard → Deployments tab
    - Click the three dots on the latest deployment
    - Click "Redeploy"
 
-2. **Option B - Git Push:**
-   ```bash
-   git add .
-   git commit -m "trigger redeploy after env var update"
-   git push origin main
-   ```
-
-## Step 4: Verify the Fix
+## Step 5: Verify the Fix
 
 1. **Check the diagnostic endpoint:**
    ```
@@ -93,7 +104,7 @@ After updating the environment variables:
    - https://ba-sports-ecommerce-site.vercel.app/products
    - Should load without 500 errors
 
-## Step 5: Check Vercel Function Logs (If Still Issues)
+## Step 6: Check Vercel Function Logs (If Still Issues)
 
 If you still see errors:
 
