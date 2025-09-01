@@ -56,6 +56,7 @@ const AdminProducts = () => {
     images: [],
     tags: [],
     rating: 0,
+    brandType: 'BA_SPORTS', // NEW: Brand type field
     isActive: true,
     isFeatured: false
   });
@@ -200,6 +201,7 @@ const AdminProducts = () => {
         images: productImages,
         tags: product.tags ? (typeof product.tags === 'string' ? JSON.parse(product.tags) : product.tags) : [],
         rating: parseFloat(product.rating) || 0,
+        brandType: product.brandType || 'BA_SPORTS', // NEW: Handle brand type
         isActive: product.isActive !== undefined ? product.isActive : true,
         isFeatured: product.isFeatured !== undefined ? product.isFeatured : false
       });
@@ -218,6 +220,7 @@ const AdminProducts = () => {
         images: Array(3).fill(''),
         tags: [],
         rating: 0,
+        brandType: 'BA_SPORTS', // NEW: Default brand type
         isActive: true,
         isFeatured: false
       });
@@ -240,6 +243,7 @@ const AdminProducts = () => {
       images: Array(3).fill(''),
       tags: [],
       rating: 0,
+      brandType: 'BA_SPORTS', // NEW: Reset brand type
       isActive: true,
       isFeatured: false
     });
@@ -252,8 +256,8 @@ const AdminProducts = () => {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.price || !formData.stock || !formData.category) {
-        throw new Error('Please fill in all required fields');
+      if (!formData.name || !formData.price || !formData.stock || !formData.category || !formData.brandType) {
+        throw new Error('Please fill in all required fields including brand type');
       }
 
       // Validate price and stock are positive numbers
@@ -287,6 +291,7 @@ const AdminProducts = () => {
         images: validImages,
         tags: formData.tags || [],
         rating: parseFloat(formData.rating) || 0,
+        brandType: formData.brandType, // NEW: Include brand type
         isActive: formData.isActive,
         isFeatured: formData.isFeatured
       };
@@ -801,6 +806,7 @@ const AdminProducts = () => {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Product</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Category</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Brand</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Price</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Stock</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Rating</th>
@@ -831,6 +837,13 @@ const AdminProducts = () => {
                       </td>
                       <td className="px-6 py-4 text-gray-900">
                         {product.category ? (typeof product.category === 'object' ? product.category.name : product.category) : 'No Category'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-sm rounded-full ${
+                          product.brandType === 'BA_SPORTS' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {product.brandType === 'BA_SPORTS' ? 'BA Sports' : 'Other Brands'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-gray-900 font-medium">${product.price}</div>
@@ -1035,7 +1048,7 @@ const AdminProducts = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Category *
@@ -1056,6 +1069,21 @@ const AdminProducts = () => {
                             </option>
                           ))
                         )}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Brand Type *
+                      </label>
+                      <select
+                        required
+                        value={formData.brandType}
+                        onChange={(e) => setFormData({ ...formData, brandType: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="BA_SPORTS">BA Sports</option>
+                        <option value="OTHER">Other Brands</option>
                       </select>
                     </div>
 

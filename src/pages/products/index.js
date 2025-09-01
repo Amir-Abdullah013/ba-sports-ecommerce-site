@@ -25,6 +25,7 @@ const ProductsPage = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedBrand, setSelectedBrand] = useState('All'); // NEW: Brand filter state
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [viewMode, setViewMode] = useState('grid');
@@ -53,9 +54,9 @@ const ProductsPage = () => {
     
     searchTimeoutRef.current = setTimeout(() => {
       setCurrentPage(1); // Reset to first page on search
-      loadProducts(1, query, selectedCategory, sortBy, sortOrder);
+      loadProducts(1, query, selectedCategory, selectedBrand, sortBy, sortOrder);
     }, 300);
-  }, [selectedCategory, sortBy, sortOrder]);
+  }, [selectedCategory, selectedBrand, sortBy, sortOrder]);
 
   // Load categories from database
   const loadCategories = useCallback(async () => {
@@ -79,7 +80,7 @@ const ProductsPage = () => {
   }, []);
 
   // PERFORMANCE: Optimized product loading with pagination
-  const loadProducts = useCallback(async (page = 1, search = '', category = 'All', sort = 'createdAt', order = 'desc') => {
+  const loadProducts = useCallback(async (page = 1, search = '', category = 'All', brand = 'All', sort = 'createdAt', order = 'desc') => {
     try {
       const isFirstLoad = page === 1;
       if (isFirstLoad) {
@@ -88,13 +89,14 @@ const ProductsPage = () => {
         setIsLoadingMore(true);
       }
 
-      console.log(`🔍 Loading products: page=${page}, search="${search}", category="${category}"`);
+      console.log(`🔍 Loading products: page=${page}, search="${search}", category="${category}", brand="${brand}"`);
       
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
         ...(search && { search }),
         ...(category !== 'All' && { category }),
+        ...(brand !== 'All' && { brand }),
         sortBy: sort,
         sortOrder: order
       });
@@ -131,9 +133,9 @@ const ProductsPage = () => {
 
   // PERFORMANCE: Initial load
   useEffect(() => {
-    loadProducts(1, searchQuery, selectedCategory, sortBy, sortOrder);
+    loadProducts(1, searchQuery, selectedCategory, selectedBrand, sortBy, sortOrder);
     loadCategories();
-  }, [selectedCategory, sortBy, sortOrder, loadCategories, loadProducts]);
+  }, [selectedCategory, selectedBrand, sortBy, sortOrder, loadCategories, loadProducts]);
 
   // PERFORMANCE: Debounced search effect
   useEffect(() => {
@@ -154,9 +156,9 @@ const ProductsPage = () => {
   // PERFORMANCE: Load more function for pagination
   const loadMoreProducts = useCallback(() => {
     if (!isLoadingMore && hasNextPage) {
-      loadProducts(currentPage + 1, searchQuery, selectedCategory, sortBy, sortOrder);
+      loadProducts(currentPage + 1, searchQuery, selectedCategory, selectedBrand, sortBy, sortOrder);
     }
-  }, [currentPage, hasNextPage, isLoadingMore, searchQuery, selectedCategory, sortBy, sortOrder, loadProducts]);
+  }, [currentPage, hasNextPage, isLoadingMore, searchQuery, selectedCategory, selectedBrand, sortBy, sortOrder, loadProducts]);
 
   // CART FUNCTIONALITY: Add to cart handler with feedback
   const handleAddToCart = useCallback((product) => {
@@ -258,6 +260,44 @@ const ProductsPage = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Brand Filter Tabs */}
+          <div className="mb-8">
+            <div className="flex justify-center">
+              <div className="inline-flex bg-white rounded-xl shadow-lg p-2 border">
+                <button
+                  onClick={() => setSelectedBrand('All')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    selectedBrand === 'All'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  All Products
+                </button>
+                <button
+                  onClick={() => setSelectedBrand('BA_SPORTS')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    selectedBrand === 'BA_SPORTS'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  BA Sports
+                </button>
+                <button
+                  onClick={() => setSelectedBrand('OTHER')}
+                  className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    selectedBrand === 'OTHER'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Other Brands
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Search and Filters */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -360,6 +400,7 @@ const ProductsPage = () => {
                       onClick={() => {
                         setSearchQuery('');
                         setSelectedCategory('All');
+                        setSelectedBrand('All'); // NEW: Reset brand filter
                       }}
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >

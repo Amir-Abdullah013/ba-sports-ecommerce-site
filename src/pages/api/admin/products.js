@@ -118,6 +118,7 @@ async function getProducts(req, res, startTime) {
     const { 
       search = '', 
       category = '', 
+      brand = 'All', // NEW: Brand filter parameter
       page = 1, 
       limit = 20,
       sortBy = 'createdAt',
@@ -128,7 +129,7 @@ async function getProducts(req, res, startTime) {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Admin can see more
     const skip = (pageNum - 1) * limitNum;
 
-    console.log(`🔍 Admin Products: page=${pageNum}, limit=${limitNum}, search="${search}"`);
+    console.log(`🔍 Admin Products: page=${pageNum}, limit=${limitNum}, search="${search}", brand="${brand}"`);
 
     // PERFORMANCE: Build optimized where clause
     const where = {
@@ -143,6 +144,9 @@ async function getProducts(req, res, startTime) {
         category: {
           name: { equals: category, mode: 'insensitive' }
         }
+      }),
+      ...(brand && brand !== 'All' && {
+        brandType: brand === 'BA_SPORTS' ? 'BA_SPORTS' : 'OTHER'
       })
     };
 
@@ -170,6 +174,7 @@ async function getProducts(req, res, startTime) {
           reviewCount: true,
           isActive: true,
           isFeatured: true,
+          brandType: true, // NEW: Include brand type
           createdAt: true,
           updatedAt: true,
           category: {
@@ -248,11 +253,11 @@ async function getProducts(req, res, startTime) {
 
 async function createProduct(req, res) {
   try {
-    const { name, description, price, category, stock, rating, image, images, originalPrice, sku } = req.body;
+    const { name, description, price, category, stock, rating, image, images, originalPrice, sku, brandType } = req.body;
 
     // PERFORMANCE: Validate required fields quickly
-    if (!name || !price || !category) {
-      return res.status(400).json({ error: 'Name, price, and category are required' });
+    if (!name || !price || !category || !brandType) {
+      return res.status(400).json({ error: 'Name, price, category, and brand type are required' });
     }
 
     // PERFORMANCE: Parallel category lookup/creation
@@ -286,6 +291,7 @@ async function createProduct(req, res) {
         images: typeof images === 'string' ? images : JSON.stringify(images || []),
         tags: JSON.stringify([]), // Default empty tags array
         sku: sku || null,
+        brandType: brandType || 'BA_SPORTS', // NEW: Set brand type
         isActive: true,
       },
       select: {

@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("NEXT_PUBLIC_DATABASE_URL")
 }
 
 
@@ -91,26 +91,27 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
   price       Float
   originalPrice Float?
   image       String
-  images      String   // JSON string of image URLs
+  images      String    // JSON string of image URLs
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  stock       Int      @default(0)
-  sku         String?  @unique
+  category    Category  @relation(fields: [categoryId], references: [id])
+  stock       Int       @default(0)
+  sku         String?   @unique
   weight      Float?
-  dimensions  String?  // JSON string
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
+  dimensions  String?   // JSON string
+  isActive    Boolean   @default(true)
+  isFeatured  Boolean   @default(false)
   rating      Float?
-  reviewCount Int      @default(0)
-  tags        String   // JSON string of tags
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  reviewCount Int       @default(0)
+  tags        String    // JSON string of tags
+  brandType   BrandType @default(BA_SPORTS)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
   orderItems  OrderItem[]
@@ -125,8 +126,10 @@ model Product {
   @@index([price])
   @@index([rating])
   @@index([name])
+  @@index([brandType])
   @@index([isActive, isFeatured])
   @@index([categoryId, isActive])
+  @@index([brandType, isActive])
   @@map("products")
 }
 
@@ -296,4 +299,9 @@ enum PaymentMethod {
   HBLPAY
   STRIPE
   PAYPAL
+}
+
+enum BrandType {
+  BA_SPORTS
+  OTHER
 }

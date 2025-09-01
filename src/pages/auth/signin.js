@@ -54,7 +54,7 @@ const SignIn = ({ providers }) => {
 
               {/* Sign In Buttons */}
               <div className="space-y-4">
-                {Object.values(providers).map((provider) => (
+                {providers && Object.values(providers).map((provider) => (
                   <motion.button
                     key={provider.name}
                     whileHover={{ scale: 1.02 }}
@@ -66,6 +66,11 @@ const SignIn = ({ providers }) => {
                     <span>Sign in with {provider.name}</span>
                   </motion.button>
                 ))}
+                {!providers && (
+                  <div className="text-center py-4">
+                    <p className="text-white/80">Authentication providers not available</p>
+                  </div>
+                )}
               </div>
 
               {/* Privacy Notice */}
@@ -99,10 +104,17 @@ const SignIn = ({ providers }) => {
 };
 
 export async function getServerSideProps() {
-  const providers = await getProviders();
-  return {
-    props: { providers },
-  };
+  try {
+    const providers = await getProviders();
+    return {
+      props: { providers: providers || {} },
+    };
+  } catch (error) {
+    console.error('Error getting providers:', error);
+    return {
+      props: { providers: {} },
+    };
+  }
 }
 
 export default SignIn;

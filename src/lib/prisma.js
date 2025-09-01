@@ -25,7 +25,7 @@ const createPrismaClient = () => {
     log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.NEXT_PUBLIC_DATABASE_URL,
       },
     },
     // VERCEL PRODUCTION FIX: Optimized for serverless functions

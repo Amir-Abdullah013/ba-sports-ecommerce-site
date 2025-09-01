@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   const startTime = Date.now();
   
   // LOCALHOST FIX: Validate environment variables first
-  if (!process.env.DATABASE_URL) {
+  if (!process.env.NEXT_PUBLIC_DATABASE_URL) {
     console.error('❌ DATABASE_URL not found in environment variables');
     return res.status(500).json({ 
       products: [],
@@ -134,6 +134,7 @@ async function getProducts(req, res, startTime) {
       limit = 20, 
       search = '', 
       category = '', 
+      brand = '', // NEW: Brand filter parameter
       sortBy = 'createdAt',
       sortOrder = 'desc',
       featured = false
@@ -143,7 +144,7 @@ async function getProducts(req, res, startTime) {
     const limitNum = Math.min(50, Math.max(1, parseInt(limit))); // Cap at 50
     const skip = (pageNum - 1) * limitNum;
 
-    console.log(`🔍 Products API: page=${pageNum}, limit=${limitNum}, search="${search}"`);
+    console.log(`🔍 Products API: page=${pageNum}, limit=${limitNum}, search="${search}", brand="${brand}"`);
 
     // PERFORMANCE: Build optimized where clause
     const where = {
@@ -158,6 +159,9 @@ async function getProducts(req, res, startTime) {
         category: {
           name: { equals: category, mode: 'insensitive' }
         }
+      }),
+      ...(brand && brand !== 'All' && {
+        brandType: brand === 'BA_SPORTS' ? 'BA_SPORTS' : 'OTHER'
       }),
       ...(featured === 'true' && { isFeatured: true })
     };
@@ -184,6 +188,7 @@ async function getProducts(req, res, startTime) {
           rating: true,
           reviewCount: true,
           isFeatured: true,
+          brandType: true, // NEW: Include brand type
           createdAt: true,
           category: {
             select: {
