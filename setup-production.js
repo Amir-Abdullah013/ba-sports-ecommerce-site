@@ -13,18 +13,18 @@ if (!fs.existsSync(envPath)) {
   console.log('📝 Creating .env file...');
   
   const envContent = `# NextAuth Configuration
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-super-secret-key-minimum-32-characters-long
+NEXT_PUBLIC_NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_NEXTAUTH_SECRET=your-super-secret-key-minimum-32-characters-long
 
 # Database connection (PostgreSQL)
-DATABASE_URL="postgresql://username:password@localhost:5432/basports_db"
+NEXT_PUBLIC_DATABASE_URL="postgresql://username:password@localhost:5432/basports_db"
 
 # Google OAuth Configuration
-GOOGLE_CLIENT_ID=your_google_client_id_here
-GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
+NEXT_PUBLIC_GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 
 # Environment
-NODE_ENV=development
+NEXT_PUBLIC_NODE_ENV=development
 `;
 
   fs.writeFileSync(envPath, envContent);

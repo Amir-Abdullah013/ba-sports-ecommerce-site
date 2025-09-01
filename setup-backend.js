@@ -14,15 +14,15 @@ if (!fs.existsSync(envPath)) {
   console.log('📝 Please create .env.local file with the following content:');
   console.log(`
 # Database Configuration
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/ba_sports_db"
+NEXT_PUBLIC_DATABASE_URL="postgresql://postgres:your_password@localhost:5432/ba_sports_db"
 
 # NextAuth Configuration
-NEXTAUTH_URL="http://localhost:3004"
-NEXTAUTH_SECRET="your-super-secret-key-here-change-this-in-production"
+NEXT_PUBLIC_NEXTAUTH_URL="http://localhost:3004"
+NEXT_PUBLIC_NEXTAUTH_SECRET="your-super-secret-key-here-change-this-in-production"
 
 # Google OAuth (Optional)
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
+NEXT_PUBLIC_GOOGLE_CLIENT_ID="your-google-client-id"
+NEXT_PUBLIC_GOOGLE_CLIENT_SECRET="your-google-client-secret"
   `);
   console.log('\n⚠️  Please create the .env.local file and run this script again.');
   process.exit(1);

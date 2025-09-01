@@ -8,20 +8,8 @@ import { useAccounts } from '../hooks/useAccounts';
 import AccountSwitcher from './AccountSwitcher';
 import { useRipple } from '../hooks/useRipple';
 
-// API function to get products for search
-const getProducts = async () => {
-  try {
-    const response = await fetch('/api/products');
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-    const data = await response.json();
-    return data.products || [];
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-};
+// Import the improved getProducts function from api.js
+import { getProducts as fetchProducts } from '../lib/api';
 
 const Navbar = ({ cartItems = [], onCartToggle }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -112,16 +100,28 @@ const Navbar = ({ cartItems = [], onCartToggle }) => {
   }, [user?.id]);
 
   useEffect(() => {
-    // Load products for search
+    // FIXED: Load products for search with better error handling
     const loadProducts = async () => {
       try {
-        const products = await getProducts();
+        console.log('🔄 Loading products for search...');
+        const products = await fetchProducts();
         setAllProducts(products);
+        
+        if (products.length === 0) {
+          console.warn('⚠️ No products returned from API - search functionality may be limited');
+        } else {
+          console.log(`✅ Loaded ${products.length} products for search`);
+        }
       } catch (error) {
-        console.error('Failed to load products for search:', error);
+        console.error('❌ Failed to load products for search:', error);
+        // Don't throw error, just set empty array so search still works
+        setAllProducts([]);
       }
     };
-    loadProducts();
+    
+    // Load products after a small delay to avoid blocking initial render
+    const timer = setTimeout(loadProducts, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -17,12 +17,12 @@ if (!fs.existsSync(envPath)) {
   console.log('\n📝 Create .env.local with:');
   console.log(`
 # NextAuth Configuration
-NEXTAUTH_URL=http://localhost:3003
-NEXTAUTH_SECRET=development-secret-key-minimum-32-characters-long-for-testing-purposes
+NEXT_PUBLIC_NEXTAUTH_URL=http://localhost:3003
+NEXT_PUBLIC_NEXTAUTH_SECRET=development-secret-key-minimum-32-characters-long-for-testing-purposes
 
 # Google OAuth Configuration
-GOOGLE_CLIENT_ID=your-google-client-id-here
-GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id-here
+NEXT_PUBLIC_GOOGLE_CLIENT_SECRET=your-google-client-secret-here
   `);
   process.exit(1);
 }
@@ -37,7 +37,7 @@ let hasNextAuthUrl = false;
 let hasNextAuthSecret = false;
 
 lines.forEach(line => {
-  if (line.startsWith('GOOGLE_CLIENT_ID=')) {
+  if (line.startsWith('NEXT_PUBLIC_GOOGLE_CLIENT_ID=')) {
     hasClientId = true;
     const value = line.split('=')[1];
     if (value && value !== 'your-google-client-id-here') {
@@ -46,7 +46,7 @@ lines.forEach(line => {
       console.log('⚠️  GOOGLE_CLIENT_ID needs to be updated with real value');
     }
   }
-  if (line.startsWith('GOOGLE_CLIENT_SECRET=')) {
+  if (line.startsWith('NEXT_PUBLIC_GOOGLE_CLIENT_SECRET=')) {
     hasClientSecret = true;
     const value = line.split('=')[1];
     if (value && value !== 'your-google-client-secret-here') {
@@ -55,11 +55,11 @@ lines.forEach(line => {
       console.log('⚠️  GOOGLE_CLIENT_SECRET needs to be updated with real value');
     }
   }
-  if (line.startsWith('NEXTAUTH_URL=')) {
+  if (line.startsWith('NEXT_PUBLIC_NEXTAUTH_URL=')) {
     hasNextAuthUrl = true;
     console.log('✅ NEXTAUTH_URL is set');
   }
-  if (line.startsWith('NEXTAUTH_SECRET=')) {
+  if (line.startsWith('NEXT_PUBLIC_NEXTAUTH_SECRET=')) {
     hasNextAuthSecret = true;
     console.log('✅ NEXTAUTH_SECRET is set');
   }

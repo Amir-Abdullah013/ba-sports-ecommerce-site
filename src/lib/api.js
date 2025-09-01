@@ -197,41 +197,11 @@ const normalizeProduct = (product) => {
 
 // Products API
 export const getProducts = async (category = 'All') => {
-  try {
-    const response = await fetch('/api/products');
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-    const data = await response.json();
-    const products = data.products || [];
-    
-    console.log('📊 Retrieved', products.length, 'products from public API');
-    
-    if (category === 'All') {
-      return products;
-    }
-    return products.filter(product => {
-      const productCategory = typeof product.category === 'object' ? product.category.name : product.category;
-      return productCategory === category;
-    });
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
+  return fetchProductsWithRetry({ category });
 };
 
 export const getProduct = async (id) => {
-  try {
-    const response = await fetch(`/api/products/${id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch product');
-    }
-    const data = await response.json();
-    return data.product || data;
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return null;
-  }
+  return fetchProductWithRetry(id);
 };
 
 // Admin-specific product functions
@@ -432,4 +402,155 @@ export const resetProducts = () => {
 export const clearAllProducts = () => {
   setStoredProducts([]);
   console.log('All products cleared');
+};
+
+// ========================================
+// CLIENT-SIDE PRODUCT FETCHING UTILITIES
+// ========================================
+
+/**
+ * Enhanced client-side product fetching with retry logic and error handling
+ * @param {Object} options - Fetch options
+ * @param {string} options.category - Category filter (default: 'All')
+ * @param {number} options.retries - Number of retry attempts (default: 3)
+ * @param {number} options.limit - Number of products to fetch (default: 100)
+ * @param {string} options.search - Search query
+ * @param {number} options.page - Page number for pagination
+ * @returns {Promise<Array>} Array of products or empty array on error
+ */
+export const fetchProductsWithRetry = async (options = {}) => {
+  const {
+    category = 'All',
+    retries = 3,
+    limit = 100,
+    search = '',
+    page = 1,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = options;
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        page: page.toString(),
+        sortBy,
+        sortOrder,
+        ...(search && { search }),
+        ...(category !== 'All' && { category })
+      });
+
+      const response = await fetch(`/api/products?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Add timeout for fetch
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn(`Products API returned ${response.status}:`, errorData);
+        
+        // If it's a server error, retry
+        if (response.status >= 500 && i < retries - 1) {
+          console.log(`Retrying products fetch... (${i + 1}/${retries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+          continue;
+        }
+        
+        throw new Error(errorData.message || `HTTP ${response.status}: ${errorData.error || 'Failed to fetch products'}`);
+      }
+      
+      const data = await response.json();
+      const products = data.products || [];
+      
+      // Check if there's an error in the meta field (API returned 200 but with error info)
+      if (data.meta?.error) {
+        console.warn('API returned error in meta:', data.meta.error);
+        // Still return products if any were returned, otherwise throw error
+        if (products.length === 0) {
+          throw new Error(data.meta.message || data.meta.error);
+        }
+      }
+      
+      console.log(`✅ Retrieved ${products.length} products from API (attempt ${i + 1})`);
+      
+      // Apply category filter if needed
+      if (category === 'All') {
+        return products;
+      }
+      return products.filter(product => {
+        const productCategory = typeof product.category === 'object' ? product.category.name : product.category;
+        return productCategory === category;
+      });
+      
+    } catch (error) {
+      console.error(`Error fetching products (attempt ${i + 1}):`, error);
+      
+      // If this is the last retry, return empty array
+      if (i === retries - 1) {
+        console.warn('All product fetch attempts failed, returning empty array');
+        return [];
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
+  
+  return [];
+};
+
+/**
+ * Enhanced single product fetching with retry logic
+ * @param {string} id - Product ID
+ * @param {number} retries - Number of retry attempts (default: 3)
+ * @returns {Promise<Object|null>} Product object or null on error
+ */
+export const fetchProductWithRetry = async (id, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn(`Product API returned ${response.status}:`, errorData);
+        
+        // If it's a server error, retry
+        if (response.status >= 500 && i < retries - 1) {
+          console.log(`Retrying product fetch... (${i + 1}/${retries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
+          continue;
+        }
+        
+        throw new Error(errorData.message || `HTTP ${response.status}: ${errorData.error || 'Failed to fetch product'}`);
+      }
+      
+      const data = await response.json();
+      return data.product || data;
+      
+    } catch (error) {
+      console.error(`Error fetching product (attempt ${i + 1}):`, error);
+      
+      // If this is the last retry, return null
+      if (i === retries - 1) {
+        console.warn('All product fetch attempts failed, returning null');
+        return null;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
+  
+  return null;
 };

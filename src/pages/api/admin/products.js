@@ -12,6 +12,11 @@
 // FIXED: Node.js runtime for Prisma compatibility
 export const config = {
   runtime: 'nodejs',
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
 };
 
 import prisma from '../../../lib/prisma';
@@ -48,7 +53,7 @@ export default async function handler(req, res) {
     console.error('❌ Admin products API error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -148,8 +153,8 @@ async function getProducts(req, res, startTime) {
 
     // PERFORMANCE: Execute optimized parallel queries
     const [products, totalCount, categories] = await Promise.all([
-      prisma.product.findMany({
-        where,
+        prisma.product.findMany({
+          where,
         select: {
           // PERFORMANCE: Select only required fields for admin list
           id: true,
@@ -168,7 +173,7 @@ async function getProducts(req, res, startTime) {
           createdAt: true,
           updatedAt: true,
           category: {
-            select: {
+              select: {
               id: true,
               name: true,
               slug: true
@@ -279,6 +284,7 @@ async function createProduct(req, res) {
         rating: rating ? parseFloat(rating) : null,
         image: image || '/BA-SportsLogo.png',
         images: typeof images === 'string' ? images : JSON.stringify(images || []),
+        tags: JSON.stringify([]), // Default empty tags array
         sku: sku || null,
         isActive: true,
       },
@@ -299,7 +305,7 @@ async function createProduct(req, res) {
     console.error('❌ Create product error:', error);
     return res.status(500).json({ 
       error: 'Failed to create product',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -338,6 +344,11 @@ async function updateProduct(req, res) {
       updateData.images = JSON.stringify(updateData.images);
     }
 
+    // PERFORMANCE: Handle tags JSON
+    if (updateData.tags && typeof updateData.tags !== 'string') {
+      updateData.tags = JSON.stringify(updateData.tags);
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: updateData,
@@ -356,7 +367,7 @@ async function updateProduct(req, res) {
     console.error('❌ Update product error:', error);
     return res.status(500).json({ 
       error: 'Failed to update product',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -381,7 +392,7 @@ async function deleteProduct(req, res) {
     
     return res.status(500).json({ 
       error: 'Failed to delete product',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }

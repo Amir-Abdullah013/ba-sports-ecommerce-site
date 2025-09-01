@@ -1,15 +1,17 @@
 /**
- * PERFORMANCE OPTIMIZED: Products API
+ * PRODUCTS API - FIXED FOR LOCALHOST AND PRODUCTION
  * 
- * Key optimizations:
+ * Key features:
+ * - Proper error handling for Supabase connections
+ * - Environment variable validation
+ * - Graceful fallbacks for development
  * - Pagination with limit (default 20)
  * - Selective field loading (only required fields)
- * - Efficient category loading
  * - Response caching headers
- * - Minimal JSON parsing
+ * - NEVER crashes - always returns valid JSON
  */
 
-// FIXED: Node.js runtime for Prisma compatibility  
+// REQUIRED: Node.js runtime for Prisma compatibility  
 export const config = {
   runtime: 'nodejs',
 };
@@ -19,34 +21,107 @@ import prisma, { connectDatabase } from '../../../lib/prisma';
 export default async function handler(req, res) {
   const startTime = Date.now();
   
+  // LOCALHOST FIX: Validate environment variables first
+  if (!process.env.NEXT_PUBLIC_DATABASE_URL) {
+    console.error('❌ DATABASE_URL not found in environment variables');
+    return res.status(200).json({ 
+      products: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+        limit: 20
+      },
+      meta: {
+        error: 'Database configuration missing',
+        message: 'Please check your .env.local file',
+        responseTime: Date.now() - startTime,
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? 
+          'NEXT_PUBLIC_DATABASE_URL environment variable is required. Check your .env.local file.' : undefined 
+      }
+    });
+  }
+
+  // LOCALHOST FIX: Only handle GET requests for products
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).json({ 
+      error: `Method ${req.method} Not Allowed`,
+      message: 'This endpoint only supports GET requests'
+    });
+  }
+  
   try {
-    // PRODUCTION FIX: Ensure database connection
-    await connectDatabase(2); // Quick retry for production
+    // LOCALHOST FIX: Test database connection with better error handling
+    await connectDatabase(2);
     
-    switch (req.method) {
-      case 'GET':
-        return await getProducts(req, res, startTime);
-      case 'POST':
-        return await createProduct(req, res);
-      default:
-        res.setHeader('Allow', ['GET', 'POST']);
-        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-    }
+    return await getProducts(req, res, startTime);
+    
   } catch (error) {
     console.error('❌ Products API Error:', error);
     
-    // PRODUCTION FIX: Better error handling for database connection issues
-    if (error.message.includes('connection') || error.message.includes('timeout')) {
-      return res.status(503).json({ 
-        error: 'Database temporarily unavailable', 
-        message: 'Please try again in a moment',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    // LOCALHOST FIX: More specific error handling - NEVER crash
+    if (error.message.includes('getaddrinfo ENOTFOUND') || error.message.includes('connect ECONNREFUSED')) {
+      return res.status(200).json({ 
+        products: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+          limit: 20
+        },
+        meta: {
+          error: 'Database connection failed', 
+          message: 'Cannot connect to Supabase database. Please check your internet connection and NEXT_PUBLIC_DATABASE_URL.',
+          responseTime: Date.now() - startTime,
+          details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? {
+            error: error.message,
+            suggestion: 'Verify NEXT_PUBLIC_DATABASE_URL in .env.local and ensure Supabase project is active'
+          } : undefined 
+        }
       });
     }
     
-    return res.status(500).json({ 
-      error: 'Internal server error', 
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    if (error.message.includes('connection') || error.message.includes('timeout')) {
+      return res.status(200).json({ 
+        products: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalCount: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+          limit: 20
+        },
+        meta: {
+          error: 'Database temporarily unavailable', 
+          message: 'Please try again in a moment',
+          responseTime: Date.now() - startTime,
+          details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
+        }
+      });
+    }
+    
+    return res.status(200).json({ 
+      products: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalCount: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+        limit: 20
+      },
+      meta: {
+        error: 'Internal server error', 
+        message: 'An unexpected error occurred while fetching products',
+        responseTime: Date.now() - startTime,
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
+      }
     });
   }
 }
@@ -156,7 +231,28 @@ async function getProducts(req, res, startTime) {
   } catch (error) {
     console.error('❌ Database error in getProducts:', error);
     
-    // PERFORMANCE: Graceful degradation - return empty results instead of crashing
+    // LOCALHOST FIX: Better error handling for specific database issues
+    if (error.code === 'P1001') {
+      return res.status(503).json({
+        error: 'Database connection failed',
+        message: 'Cannot reach the database server. Please check your Supabase connection.',
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? {
+          error: error.message,
+          code: error.code,
+          suggestion: 'Check if your Supabase project is active and NEXT_PUBLIC_DATABASE_URL is correct'
+        } : undefined
+      });
+    }
+
+    if (error.code === 'P2002') {
+      return res.status(400).json({
+        error: 'Database constraint error',
+        message: 'A database constraint was violated.',
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    // LOCALHOST FIX: Graceful degradation - return empty results with clear error info
     return res.status(200).json({
       products: [],
       pagination: {
@@ -169,7 +265,9 @@ async function getProducts(req, res, startTime) {
       },
       meta: {
         error: 'Database temporarily unavailable',
-        responseTime: Date.now() - startTime
+        message: 'Failed to fetch products from database',
+        responseTime: Date.now() - startTime,
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
       }
     });
   }

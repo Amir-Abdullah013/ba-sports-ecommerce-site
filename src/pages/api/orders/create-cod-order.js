@@ -317,7 +317,7 @@ export default async function handler(req, res) {
     // Generic error response
     return res.status(500).json({ 
       success: false,
-      error: process.env.NODE_ENV === 'development' 
+      error: process.env.NEXT_PUBLIC_NODE_ENV === 'development' 
         ? `Order creation failed: ${error.message}` 
         : 'Failed to create order. Please try again.',
       code: 'ORDER_CREATION_FAILED'

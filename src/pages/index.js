@@ -30,6 +30,8 @@ const HomePage = () => {
       setFeaturedProducts(products.slice(0, 4));
     } catch (error) {
       console.error("Error fetching products:", error);
+      // Set empty array instead of crashing
+      setFeaturedProducts([]);
     } finally {
       setIsLoading(false);
     }

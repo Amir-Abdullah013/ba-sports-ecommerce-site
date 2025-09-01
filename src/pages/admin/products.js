@@ -54,6 +54,7 @@ const AdminProducts = () => {
     sku: '',
     image: '',
     images: [],
+    tags: [],
     rating: 0,
     isActive: true,
     isFeatured: false
@@ -121,7 +122,6 @@ const AdminProducts = () => {
         console.log(`📊 Admin products loaded: ${data.products?.length || 0} items`);
         
         setProducts(data.products || []);
-        setCategories(['All', ...(data.categories?.map(c => c.name) || [])]);
         
         if (data.pagination) {
           setCurrentPage(data.pagination.currentPage);
@@ -198,6 +198,7 @@ const AdminProducts = () => {
         sku: product.sku || '',
         image: product.image || '',
         images: productImages,
+        tags: product.tags ? (typeof product.tags === 'string' ? JSON.parse(product.tags) : product.tags) : [],
         rating: parseFloat(product.rating) || 0,
         isActive: product.isActive !== undefined ? product.isActive : true,
         isFeatured: product.isFeatured !== undefined ? product.isFeatured : false
@@ -215,6 +216,7 @@ const AdminProducts = () => {
         sku: '',
         image: '',
         images: Array(3).fill(''),
+        tags: [],
         rating: 0,
         isActive: true,
         isFeatured: false
@@ -236,6 +238,7 @@ const AdminProducts = () => {
       sku: '',
       image: '',
       images: Array(3).fill(''),
+      tags: [],
       rating: 0,
       isActive: true,
       isFeatured: false
@@ -282,6 +285,7 @@ const AdminProducts = () => {
         sku: formData.sku.trim() || '',
         image: validImages[0] || '', // Use first image as main image
         images: validImages,
+        tags: formData.tags || [],
         rating: parseFloat(formData.rating) || 0,
         isActive: formData.isActive,
         isFeatured: formData.isFeatured
@@ -478,9 +482,9 @@ const AdminProducts = () => {
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image file size must be less than 5MB');
+    // Validate file size (max 2MB for better performance)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image file size must be less than 2MB');
       return;
     }
 
@@ -488,26 +492,64 @@ const AdminProducts = () => {
     setUploadingImage(index);
     setError(null);
 
-    // Simulate upload process
-    setTimeout(() => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const newImages = [...formData.images];
-        newImages[index] = event.target.result;
-        
-        setFormData({
-          ...formData,
-          images: newImages,
-          image: index === 0 ? event.target.result : formData.image
-        });
-        setUploadingImage(null);
-      };
-      reader.onerror = () => {
-        setError('Failed to read image file');
-        setUploadingImage(null);
-      };
-      reader.readAsDataURL(file);
-    }, 1000);
+    // Optimize image before converting to base64
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      // Calculate new dimensions (max 800px width/height)
+      const maxSize = 800;
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+
+      // Set canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw and compress image
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert to base64 with reduced quality
+      const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      
+      const newImages = [...formData.images];
+      newImages[index] = optimizedDataUrl;
+      
+      setFormData({
+        ...formData,
+        images: newImages,
+        image: index === 0 ? optimizedDataUrl : formData.image
+      });
+      setUploadingImage(null);
+    };
+
+    img.onerror = () => {
+      setError('Failed to process image file');
+      setUploadingImage(null);
+    };
+
+    // Load image from file
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      img.src = event.target.result;
+    };
+    reader.onerror = () => {
+      setError('Failed to read image file');
+      setUploadingImage(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   const removeImage = (index) => {
@@ -704,15 +746,18 @@ const AdminProducts = () => {
                   Add, edit, and manage your product inventory
                 </p>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => openModal()}
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-2"
-              >
-                <FiPlus />
-                <span>Add Product</span>
-              </motion.button>
+              <div className="flex space-x-3">
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => openModal()}
+                  className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center space-x-2"
+                >
+                  <FiPlus />
+                  <span>Add Product</span>
+                </motion.button>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -736,8 +781,8 @@ const AdminProducts = () => {
               className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="All">All Categories</option>
-              {categories.length === 0 ? (
-                <option value="" disabled>Loading categories...</option>
+              {categories.length === 0 ? (  
+                <option value="" disabled>No categories found - Click "Add Categories" to add default categories</option>
               ) : (
                 categories.map(category => (
                   <option key={category.id} value={category.name}>
@@ -1002,11 +1047,15 @@ const AdminProducts = () => {
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select a category</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.name}>
-                            {category.name}
-                          </option>
-                        ))}
+                        {categories.length === 0 ? (
+                          <option value="" disabled>No categories found - Please add categories first</option>
+                        ) : (
+                          categories.map(category => (
+                            <option key={category.id} value={category.name}>
+                              {category.name}
+                            </option>
+                          ))
+                        )}
                       </select>
                     </div>
 

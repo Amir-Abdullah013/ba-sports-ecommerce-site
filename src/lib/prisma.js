@@ -19,13 +19,13 @@ const globalForPrisma = globalThis;
  * Create Prisma client with optimized settings for Supabase
  */
 const createPrismaClient = () => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NEXT_PUBLIC_NODE_ENV === 'production';
   
   return new PrismaClient({
     log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.NEXT_PUBLIC_DATABASE_URL,
       },
     },
     // VERCEL PRODUCTION FIX: Optimized for serverless functions
@@ -47,7 +47,7 @@ const createPrismaClient = () => {
  * - Development: Use singleton to prevent connection leaks during hot reload
  */
 const createPrismaInstance = () => {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NEXT_PUBLIC_NODE_ENV === 'production') {
     // Production: Always create fresh instances for Vercel serverless
     return createPrismaClient();
   } else {
@@ -68,7 +68,7 @@ export default prisma;
  * Handles connection failures gracefully with faster retry for production
  */
 export async function connectDatabase(retries = 3) {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NEXT_PUBLIC_NODE_ENV === 'production';
   const maxRetries = isProduction ? 2 : retries; // Fewer retries in production
   
   for (let i = 0; i < maxRetries; i++) {
