@@ -38,8 +38,8 @@ export default async function handler(req, res) {
         error: 'Database configuration missing',
         message: 'Please check your .env.local file',
         responseTime: Date.now() - startTime,
-        details: process.env.NODE_ENV === 'development' ? 
-          'DATABASE_URL environment variable is required. Check your .env.local file.' : undefined 
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? 
+          'NEXT_PUBLIC_DATABASE_URL environment variable is required. Check your .env.local file.' : undefined 
       }
     });
   }
@@ -76,11 +76,11 @@ export default async function handler(req, res) {
         },
         meta: {
           error: 'Database connection failed', 
-          message: 'Cannot connect to Supabase database. Please check your internet connection and DATABASE_URL.',
+          message: 'Cannot connect to Supabase database. Please check your internet connection and NEXT_PUBLIC_DATABASE_URL.',
           responseTime: Date.now() - startTime,
-          details: process.env.NODE_ENV === 'development' ? {
+          details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? {
             error: error.message,
-            suggestion: 'Verify DATABASE_URL in .env.local and ensure Supabase project is active'
+            suggestion: 'Verify NEXT_PUBLIC_DATABASE_URL in .env.local and ensure Supabase project is active'
           } : undefined 
         }
       });
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
           error: 'Database temporarily unavailable', 
           message: 'Please try again in a moment',
           responseTime: Date.now() - startTime,
-          details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+          details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
         }
       });
     }
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
         error: 'Internal server error', 
         message: 'An unexpected error occurred while fetching products',
         responseTime: Date.now() - startTime,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
       }
     });
   }
@@ -241,10 +241,10 @@ async function getProducts(req, res, startTime) {
       return res.status(503).json({
         error: 'Database connection failed',
         message: 'Cannot reach the database server. Please check your Supabase connection.',
-        details: process.env.NODE_ENV === 'development' ? {
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? {
           error: error.message,
           code: error.code,
-          suggestion: 'Check if your Supabase project is active and DATABASE_URL is correct'
+          suggestion: 'Check if your Supabase project is active and NEXT_PUBLIC_DATABASE_URL is correct'
         } : undefined
       });
     }
@@ -253,7 +253,7 @@ async function getProducts(req, res, startTime) {
       return res.status(400).json({
         error: 'Database constraint error',
         message: 'A database constraint was violated.',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
       });
     }
     
@@ -272,7 +272,7 @@ async function getProducts(req, res, startTime) {
         error: 'Database temporarily unavailable',
         message: 'Failed to fetch products from database',
         responseTime: Date.now() - startTime,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
       }
     });
   }

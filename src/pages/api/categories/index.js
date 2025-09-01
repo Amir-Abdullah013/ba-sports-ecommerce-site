@@ -29,13 +29,13 @@ export default async function handler(req, res) {
       return res.status(503).json({ 
         error: 'Database temporarily unavailable', 
         message: 'Please try again in a moment',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
       });
     }
     
     return res.status(500).json({ 
       error: 'Internal server error', 
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined 
     });
   }
 }

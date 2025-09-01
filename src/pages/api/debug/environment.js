@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   try {
     const diagnostics = {
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
+      environment: process.env.NEXT_PUBLIC_NODE_ENV,
       vercelUrl: process.env.VERCEL_URL,
       
       // Check if environment variables exist (without exposing values)
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       const prisma = new PrismaClient({
         datasources: {
           db: {
-            url: process.env.DATABASE_URL,
+            url: process.env.NEXT_PUBLIC_DATABASE_URL,
           },
         },
       });
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       status: 'error',
       message: 'Failed to run diagnostics',
       error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
