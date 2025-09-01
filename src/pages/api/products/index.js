@@ -161,7 +161,7 @@ async function getProducts(req, res, startTime) {
         }
       }),
       ...(brand && brand !== 'All' && {
-        brandType: brand === 'BA_SPORTS' ? 'BA_SPORTS' : 'OTHER'
+        brandType: brand
       }),
       ...(featured === 'true' && { isFeatured: true })
     };

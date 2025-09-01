@@ -5,163 +5,128 @@
 
 const { PrismaClient } = require('@prisma/client');
 
-const prisma = new PrismaClient();
-
-const sampleProducts = [
-  // BA Sports products
-  {
-    name: 'BA Sports Premium Football',
-    description: 'High-quality football made with premium materials for professional play.',
-    price: 29.99,
-    originalPrice: 39.99,
-    stock: 50,
-    brandType: 'BA_SPORTS',
-    category: 'Football',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['football', 'sports', 'premium']),
-    rating: 4.5,
-    isActive: true,
-    isFeatured: true
-  },
-  {
-    name: 'BA Sports Basketball',
-    description: 'Professional-grade basketball with excellent grip and durability.',
-    price: 34.99,
-    stock: 30,
-    brandType: 'BA_SPORTS',
-    category: 'Basketball',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['basketball', 'sports', 'professional']),
-    rating: 4.7,
-    isActive: true
-  },
-  {
-    name: 'BA Sports Tennis Racket',
-    description: 'Lightweight tennis racket perfect for beginners and intermediate players.',
-    price: 89.99,
-    originalPrice: 109.99,
-    stock: 20,
-    brandType: 'BA_SPORTS',
-    category: 'Tennis',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['tennis', 'racket', 'lightweight']),
-    rating: 4.3,
-    isActive: true
-  },
-  
-  // Other brand products
-  {
-    name: 'Nike Air Max Soccer Ball',
-    description: 'Official size soccer ball with Nike Air Max technology.',
-    price: 45.99,
-    stock: 25,
-    brandType: 'OTHER',
-    category: 'Soccer',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['soccer', 'nike', 'official']),
-    rating: 4.8,
-    isActive: true,
-    isFeatured: true
-  },
-  {
-    name: 'Adidas Training Shoes',
-    description: 'Comfortable training shoes for all sports activities.',
-    price: 79.99,
-    originalPrice: 99.99,
-    stock: 40,
-    brandType: 'OTHER',
-    category: 'Footwear',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['shoes', 'adidas', 'training']),
-    rating: 4.6,
-    isActive: true
-  },
-  {
-    name: 'Wilson Tennis Balls Set',
-    description: 'Professional tennis balls set of 3, perfect for tournaments.',
-    price: 12.99,
-    stock: 100,
-    brandType: 'OTHER',
-    category: 'Tennis',
-    image: '/BA-SportsLogo.png',
-    images: JSON.stringify(['/BA-SportsLogo.png']),
-    tags: JSON.stringify(['tennis', 'wilson', 'professional']),
-    rating: 4.4,
-    isActive: true
-  }
-];
-
 async function addSampleProducts() {
+  const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.NEXT_PUBLIC_DATABASE_URL,
+      },
+    },
+  });
+
   try {
-    console.log('🏗️ Adding sample products for brand filtering test...');
-    
-    // First, create categories if they don't exist
-    const categories = ['Football', 'Basketball', 'Tennis', 'Soccer', 'Footwear'];
-    
-    for (const categoryName of categories) {
-      await prisma.category.upsert({
-        where: { name: categoryName },
-        update: {},
-        create: {
-          name: categoryName,
-          slug: categoryName.toLowerCase(),
-          description: `${categoryName} products and equipment`,
-          isActive: true
-        }
-      });
-    }
-    
-    console.log('✅ Categories created/updated');
-    
-    // Add sample products
-    for (const productData of sampleProducts) {
-      // Find the category
-      const category = await prisma.category.findFirst({
-        where: { name: productData.category }
-      });
-      
-      if (!category) {
-        console.error(`❌ Category not found: ${productData.category}`);
-        continue;
+    console.log('🔍 Connecting to database...');
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+
+    // Get or create a category
+    const category = await prisma.category.upsert({
+      where: { name: 'Sports Equipment' },
+      update: {},
+      create: {
+        name: 'Sports Equipment',
+        description: 'High-quality sports equipment',
+        slug: 'sports-equipment',
+        isActive: true
       }
-      
-      // Create the product
-      const product = await prisma.product.create({
-        data: {
-          ...productData,
-          categoryId: category.id,
-          category: undefined // Remove category from data since we're using categoryId
-        }
-      });
-      
-      console.log(`✅ Added ${product.brandType} product: ${product.name}`);
+    });
+
+    console.log('✅ Using category:', category.name);
+
+    // Add sample products using raw SQL to avoid enum issues
+    const sampleProducts = [
+      {
+        name: 'Nike Air Max Running Shoes',
+        description: 'Premium running shoes for athletes',
+        price: 129.99,
+        originalPrice: 149.99,
+        image: '/BA-SportsLogo.png',
+        images: JSON.stringify(['/BA-SportsLogo.png']),
+        categoryId: category.id,
+        stock: 25,
+        isActive: true,
+        isFeatured: true,
+        rating: 4.9,
+        reviewCount: 42,
+        tags: JSON.stringify(['running', 'shoes', 'nike']),
+        brandType: 'OTHER'
+      },
+      {
+        name: 'Adidas Training Kit',
+        description: 'Complete training kit for fitness enthusiasts',
+        price: 79.99,
+        originalPrice: 89.99,
+        image: '/BA-SportsLogo.png',
+        images: JSON.stringify(['/BA-SportsLogo.png']),
+        categoryId: category.id,
+        stock: 40,
+        isActive: true,
+        isFeatured: false,
+        rating: 4.6,
+        reviewCount: 31,
+        tags: JSON.stringify(['training', 'kit', 'adidas']),
+        brandType: 'OTHER'
+      }
+    ];
+
+    for (const productData of sampleProducts) {
+      await prisma.$executeRaw`
+        INSERT INTO "products" (
+          "id", "name", "description", "price", "originalPrice", "image", "images", 
+          "categoryId", "stock", "isActive", "isFeatured", "rating", "reviewCount", 
+          "tags", "brandType", "createdAt", "updatedAt"
+        ) VALUES (
+          ${productData.id || undefined}, ${productData.name}, ${productData.description}, 
+          ${productData.price}, ${productData.originalPrice}, ${productData.image}, 
+          ${productData.images}, ${productData.categoryId}, ${productData.stock}, 
+          ${productData.isActive}, ${productData.isFeatured}, ${productData.rating}, 
+          ${productData.reviewCount}, ${productData.tags}, ${productData.brandType}, 
+          NOW(), NOW()
+        )
+      `;
     }
+
+    console.log('✅ Added 2 sample products with OTHER brand type');
+
+    // Test the brand filtering
+    console.log('\n🔍 Testing brand filtering...');
+    const baSportsProducts = await prisma.$queryRaw`
+      SELECT id, name, "brandType" 
+      FROM "products" 
+      WHERE "brandType" = 'BA_SPORTS' AND "isActive" = true
+      LIMIT 5
+    `;
+
+    const otherBrandsProducts = await prisma.$queryRaw`
+      SELECT id, name, "brandType" 
+      FROM "products" 
+      WHERE "brandType" = 'OTHER' AND "isActive" = true
+      LIMIT 5
+    `;
+
+    console.log(`✅ BA Sports products: ${baSportsProducts.length}`);
+    baSportsProducts.forEach(p => console.log(`  - ${p.name} (${p.brandType})`));
     
-    console.log('\n🎉 Sample products added successfully!');
-    console.log('\n📊 Summary:');
-    
-    const baCount = await prisma.product.count({ where: { brandType: 'BA_SPORTS' } });
-    const otherCount = await prisma.product.count({ where: { brandType: 'OTHER' } });
-    
-    console.log(`- BA Sports products: ${baCount}`);
-    console.log(`- Other brand products: ${otherCount}`);
-    console.log(`- Total products: ${baCount + otherCount}`);
-    
+    console.log(`✅ Other brands products: ${otherBrandsProducts.length}`);
+    otherBrandsProducts.forEach(p => console.log(`  - ${p.name} (${p.brandType})`));
+
+    // Test the API endpoint
+    console.log('\n🔍 Testing API endpoint...');
+    const allProducts = await prisma.$queryRaw`
+      SELECT id, name, "brandType", "isActive"
+      FROM "products" 
+      WHERE "isActive" = true
+      LIMIT 10
+    `;
+
+    console.log(`✅ Total active products: ${allProducts.length}`);
+    allProducts.forEach(p => console.log(`  - ${p.name} (${p.brandType}, Active: ${p.isActive})`));
+
   } catch (error) {
-    console.error('❌ Error adding sample products:', error);
+    console.error('❌ Error:', error.message);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Run if this file is executed directly
-if (require.main === module) {
-  addSampleProducts();
-}
-
-module.exports = { addSampleProducts };
+addSampleProducts();
