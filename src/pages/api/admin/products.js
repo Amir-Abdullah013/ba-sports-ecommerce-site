@@ -145,10 +145,9 @@ async function getProducts(req, res, startTime) {
           name: { equals: category, mode: 'insensitive' }
         }
       }),
-      // TEMPORARILY DISABLED: Brand filtering
-      // ...(brand && brand !== 'All' && {
-      //   brandType: brand === 'BA_SPORTS' ? 'BA_SPORTS' : 'OTHER'
-      // })
+      ...(brand && brand !== 'All' && {
+        brandType: brand === 'BA_SPORTS' ? 'BA_SPORTS' : 'OTHER'
+      })
     };
 
     // PERFORMANCE: Validate sort field
@@ -175,7 +174,7 @@ async function getProducts(req, res, startTime) {
           reviewCount: true,
           isActive: true,
           isFeatured: true,
-          // brandType: true, // TEMPORARILY DISABLED
+          brandType: true,
           createdAt: true,
           updatedAt: true,
           category: {
@@ -254,7 +253,7 @@ async function getProducts(req, res, startTime) {
 
 async function createProduct(req, res) {
   try {
-    const { name, description, price, category, stock, rating, image, images, originalPrice, sku } = req.body;
+    const { name, description, price, category, stock, rating, image, images, originalPrice, sku, brandType } = req.body;
 
     console.log('🔍 Creating product with data:', {
       name,
@@ -267,8 +266,8 @@ async function createProduct(req, res) {
     });
 
     // PERFORMANCE: Validate required fields quickly
-    if (!name || !price || !category) {
-      return res.status(400).json({ error: 'Name, price, and category are required' });
+    if (!name || !price || !category || !brandType) {
+      return res.status(400).json({ error: 'Name, price, category, and brand type are required' });
     }
 
     // PERFORMANCE: Parallel category lookup/creation
@@ -302,7 +301,7 @@ async function createProduct(req, res) {
         images: Array.isArray(images) ? JSON.stringify(images) : (images || '[]'),
         tags: JSON.stringify([]), // Default empty tags array
         sku: sku || null,
-        // brandType: brandType || 'BA_SPORTS', // TEMPORARILY DISABLED
+        brandType: brandType || 'BA_SPORTS',
         isActive: true,
       },
       select: {

@@ -137,13 +137,12 @@ async function getProducts(req, res, startTime) {
           name: { equals: category, mode: 'insensitive' }
         }
       }),
-      // TEMPORARILY DISABLED: Brand filtering for debugging
-      // ...(brand && brand !== 'All' && {
-      //   brandType: {
-      //     equals: brand,
-      //     mode: 'insensitive'
-      //   }
-      // }),
+      ...(brand && brand !== 'All' && {
+        brandType: {
+          equals: brand,
+          mode: 'insensitive'
+        }
+      }),
       ...(featured === 'true' && { isFeatured: true })
     };
 
@@ -169,7 +168,7 @@ async function getProducts(req, res, startTime) {
           rating: true,
           reviewCount: true,
           isFeatured: true,
-          // brandType: true, // TEMPORARILY DISABLED
+          brandType: true,
           createdAt: true,
           category: {
             select: {
