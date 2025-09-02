@@ -96,6 +96,7 @@ const AdminOrdersPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'text-yellow-500 bg-yellow-500/10';
+      case 'CONFIRMED': return 'text-cyan-500 bg-cyan-500/10';
       case 'PROCESSING': return 'text-blue-500 bg-blue-500/10';
       case 'SHIPPED': return 'text-purple-500 bg-purple-500/10';
       case 'DELIVERED': return 'text-green-500 bg-green-500/10';
@@ -107,6 +108,7 @@ const AdminOrdersPage = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'PENDING': return <FiPackage className="w-4 h-4" />;
+      case 'CONFIRMED': return <FiCheckCircle className="w-4 h-4" />;
       case 'PROCESSING': return <FiRefreshCw className="w-4 h-4" />;
       case 'SHIPPED': return <FiTruck className="w-4 h-4" />;
       case 'DELIVERED': return <FiCheckCircle className="w-4 h-4" />;
@@ -215,14 +217,22 @@ const AdminOrdersPage = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400"
+                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400 appearance-none cursor-pointer"
+                  style={{ 
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="SHIPPED">Shipped</option>
-                  <option value="DELIVERED">Delivered</option>
-                  <option value="CANCELLED">Cancelled</option>
+                  <option value="all" style={{ backgroundColor: '#1f2937', color: 'white' }}>All Statuses</option>
+                  <option value="PENDING" style={{ backgroundColor: '#1f2937', color: 'white' }}>Pending</option>
+                  <option value="CONFIRMED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Confirmed</option>
+                  <option value="PROCESSING" style={{ backgroundColor: '#1f2937', color: 'white' }}>Processing</option>
+                  <option value="SHIPPED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Shipped</option>
+                  <option value="DELIVERED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Delivered</option>
+                  <option value="CANCELLED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Cancelled</option>
                 </select>
               </div>
               <div className="flex items-end">
@@ -306,13 +316,21 @@ const AdminOrdersPage = () => {
                               value={order.status}
                               onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
                               disabled={updatingOrder === order.id}
-                              className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-blue-400"
+                              className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-blue-400 appearance-none cursor-pointer"
+                              style={{ 
+                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                                backgroundPosition: 'right 0.5rem center',
+                                backgroundRepeat: 'no-repeat',
+                                backgroundSize: '1.5em 1.5em',
+                                paddingRight: '2.5rem'
+                              }}
                             >
-                              <option value="PENDING">Pending</option>
-                              <option value="PROCESSING">Processing</option>
-                              <option value="SHIPPED">Shipped</option>
-                              <option value="DELIVERED">Delivered</option>
-                              <option value="CANCELLED">Cancelled</option>
+                              <option value="PENDING" style={{ backgroundColor: '#1f2937', color: 'white' }}>Pending</option>
+                              <option value="CONFIRMED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Confirmed</option>
+                              <option value="PROCESSING" style={{ backgroundColor: '#1f2937', color: 'white' }}>Processing</option>
+                              <option value="SHIPPED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Shipped</option>
+                              <option value="DELIVERED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Delivered</option>
+                              <option value="CANCELLED" style={{ backgroundColor: '#1f2937', color: 'white' }}>Cancelled</option>
                             </select>
                           </div>
                         </td>
