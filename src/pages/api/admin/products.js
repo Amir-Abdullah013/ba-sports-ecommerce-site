@@ -256,6 +256,16 @@ async function createProduct(req, res) {
   try {
     const { name, description, price, category, stock, rating, image, images, originalPrice, sku } = req.body;
 
+    console.log('🔍 Creating product with data:', {
+      name,
+      price,
+      category,
+      stock,
+      hasImage: !!image,
+      hasImages: !!images,
+      originalPrice
+    });
+
     // PERFORMANCE: Validate required fields quickly
     if (!name || !price || !category) {
       return res.status(400).json({ error: 'Name, price, and category are required' });
@@ -289,7 +299,7 @@ async function createProduct(req, res) {
         stock: parseInt(stock) || 0,
         rating: rating ? parseFloat(rating) : null,
         image: image || '/BA-SportsLogo.png',
-        images: typeof images === 'string' ? images : JSON.stringify(images || []),
+        images: Array.isArray(images) ? JSON.stringify(images) : (images || '[]'),
         tags: JSON.stringify([]), // Default empty tags array
         sku: sku || null,
         // brandType: brandType || 'BA_SPORTS', // TEMPORARILY DISABLED
@@ -310,9 +320,16 @@ async function createProduct(req, res) {
 
   } catch (error) {
     console.error('❌ Create product error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     return res.status(500).json({ 
       error: 'Failed to create product',
-      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      code: error.code,
+      stack: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
