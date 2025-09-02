@@ -24,7 +24,8 @@ const AdminDashboard = () => {
     totalProducts: 0,
     totalUsers: 0,
     totalOrders: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    deliveredOrders: 0
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,10 +66,17 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true);
       
+      // Fetch real data from database APIs
+      const [productsResponse, usersResponse, ordersResponse] = await Promise.all([
+        fetch('/api/admin/products?limit=1000'),
+        fetch('/api/admin/users'),
+        fetch('/api/admin/orders?limit=1000')
+      ]);
+
       const [products, users, orders] = await Promise.all([
-        getProducts(),
-        getUsers(),
-        getOrders()
+        productsResponse.ok ? productsResponse.json().then(data => data.products || []) : [],
+        usersResponse.ok ? usersResponse.json().then(data => data.users || []) : [],
+        ordersResponse.ok ? ordersResponse.json().then(data => data.orders || []) : []
       ]);
 
       // Calculate total revenue safely
@@ -84,11 +92,17 @@ const AdminDashboard = () => {
         totalRevenue
       });
       
+      // Calculate delivered orders count (including shipped orders)
+      const deliveredOrders = orders.filter(order => 
+        order.status === 'DELIVERED' || order.status === 'SHIPPED'
+      ).length;
+
       setStats({
         totalProducts: products?.length || 0,
         totalUsers: users?.filter(u => u.role !== 'ADMIN')?.length || 0,
         totalOrders: orders?.length || 0,
-        totalRevenue: totalRevenue || 0
+        totalRevenue: totalRevenue || 0,
+        deliveredOrders: deliveredOrders || 0
       });
 
       // Set recent orders safely
@@ -102,7 +116,8 @@ const AdminDashboard = () => {
         totalProducts: 0,
         totalUsers: 0,
         totalOrders: 0,
-        totalRevenue: 0
+        totalRevenue: 0,
+        deliveredOrders: 0
       });
       setRecentOrders([]);
     } finally {
@@ -144,6 +159,13 @@ const AdminDashboard = () => {
       icon: FiShoppingCart,
       color: 'from-blue-500 to-cyan-600',
       change: stats.totalOrders > 0 ? `${stats.totalOrders} orders` : 'No orders yet'
+    },
+    {
+      title: 'Shipped/Delivered',
+      value: stats.deliveredOrders,
+      icon: FiTrendingUp,
+      color: 'from-teal-500 to-green-600',
+      change: stats.deliveredOrders > 0 ? `${stats.deliveredOrders} completed` : 'No completed orders yet'
     },
     {
       title: 'Total Products',
@@ -241,7 +263,7 @@ const AdminDashboard = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             {statCards.map((card, index) => {
               const IconComponent = card.icon;
               return (
