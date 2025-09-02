@@ -50,6 +50,7 @@ const AdminOrdersPage = () => {
       console.log('Admin orders API response:', data);
       console.log('Total count received:', data.totalCount);
       console.log('Orders count:', data.orders?.length);
+      console.log('Orders statuses:', data.orders?.map(o => ({ id: o.id, status: o.status, orderNumber: o.orderNumber })));
 
       if (response.ok) {
         setOrders(data.orders || []);
@@ -59,6 +60,15 @@ const AdminOrdersPage = () => {
         setTotalCount(finalTotalCount);
         setCurrentPage(page);
         console.log('State updated - totalCount:', finalTotalCount, 'orders.length:', data.orders?.length);
+        
+        // Debug status counts
+        if (data.orders?.length > 0) {
+          const statusCounts = data.orders.reduce((acc, order) => {
+            acc[order.status] = (acc[order.status] || 0) + 1;
+            return acc;
+          }, {});
+          console.log('Status counts:', statusCounts);
+        }
       } else {
         setError(data.error || 'Failed to load orders');
       }
@@ -79,19 +89,25 @@ const AdminOrdersPage = () => {
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       setUpdatingOrder(orderId);
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
+      console.log('Updating order status:', { orderId, newStatus });
+      const response = await fetch(`/api/admin/orders?id=${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('Order status updated successfully:', data);
         // Update local state
         setOrders(prev => prev.map(order => 
           order.id === orderId ? { ...order, status: newStatus } : order
         ));
+        // Clear any previous errors
+        setError(null);
       } else {
         const data = await response.json();
+        console.error('Failed to update order status:', data);
         setError(data.error || 'Failed to update order status');
       }
     } catch (err) {
@@ -158,13 +174,16 @@ const AdminOrdersPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
           >
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-white/60 text-sm">Total Orders</p>
                   <p className="text-2xl font-bold text-white">{totalCount}</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    {orders.length} loaded
+                  </p>
                 </div>
                 <FiPackage className="w-8 h-8 text-blue-400" />
               </div>
@@ -194,9 +213,20 @@ const AdminOrdersPage = () => {
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/60 text-sm">Shipped/Delivered</p>
+                  <p className="text-white/60 text-sm">Shipped</p>
+                  <p className="text-2xl font-bold text-purple-400">
+                    {orders.filter(o => o.status === 'SHIPPED').length}
+                  </p>
+                </div>
+                <FiTruck className="w-8 h-8 text-purple-400" />
+              </div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/60 text-sm">Delivered</p>
                   <p className="text-2xl font-bold text-green-400">
-                    {orders.filter(o => o.status === 'DELIVERED' || o.status === 'SHIPPED').length}
+                    {orders.filter(o => o.status === 'DELIVERED').length}
                   </p>
                 </div>
                 <FiCheckCircle className="w-8 h-8 text-green-400" />
@@ -323,14 +353,17 @@ const AdminOrdersPage = () => {
                           <div className="flex space-x-2">
                             <select
                               value={order.status}
-                              onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                              onChange={(e) => {
+                                console.log('Status change for order', order.id, 'from', order.status, 'to', e.target.value);
+                                handleStatusUpdate(order.id, e.target.value);
+                              }}
                               disabled={updatingOrder === order.id}
-                              className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white text-sm focus:outline-none focus:border-blue-400 appearance-none cursor-pointer"
+                              className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 cursor-pointer min-w-[140px] hover:bg-white/20 transition-colors"
                               style={{ 
                                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                                backgroundPosition: 'right 0.5rem center',
+                                backgroundPosition: 'right 0.75rem center',
                                 backgroundRepeat: 'no-repeat',
-                                backgroundSize: '1.5em 1.5em',
+                                backgroundSize: '1.25em 1.25em',
                                 paddingRight: '2.5rem'
                               }}
                             >

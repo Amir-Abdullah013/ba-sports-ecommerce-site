@@ -181,6 +181,15 @@ async function getOrders(req, res) {
       page: parseInt(page), 
       limit: parseInt(limit) 
     });
+    
+    // Debug order statuses
+    if (orders.length > 0) {
+      const statusBreakdown = orders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('📊 Order status breakdown:', statusBreakdown);
+    }
 
     // Simplified data transformation for better reliability
     const transformedOrders = orders.map(order => ({
