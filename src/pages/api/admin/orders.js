@@ -151,9 +151,9 @@ async function getOrders(req, res) {
       return res.status(200).json({
         orders: [],
         total: 0,
+        totalCount: 0, // Add totalCount for frontend compatibility
         currentPage: parseInt(page),
         totalPages: 0,
-        totalCount: 0,
         error: 'Database temporarily unavailable. Please refresh the page.',
         timestamp: new Date().toISOString()
       });
@@ -185,6 +185,7 @@ async function getOrders(req, res) {
     return res.status(200).json({
       orders: transformedOrders,
       total,
+      totalCount: total, // Add totalCount for frontend compatibility
       page: parseInt(page),
       limit: parseInt(limit),
       totalPages: Math.ceil(total / parseInt(limit))
