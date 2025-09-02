@@ -16,7 +16,7 @@ export const config = {
   runtime: 'nodejs',
 };
 
-import { PrismaClient } from '@prisma/client';
+import prisma, { connectDatabase } from '../../../lib/prisma';
 
 export default async function handler(req, res) {
   const startTime = Date.now();
@@ -30,19 +30,11 @@ export default async function handler(req, res) {
     });
   }
   
-  let prisma;
-  
   try {
-    // Create a simple Prisma client without complex configurations
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.NEXT_PUBLIC_DATABASE_URL,
-        },
-      },
-    });
+    // PRODUCTION FIX: Ensure database connection like categories API
+    await connectDatabase(2);
     
-    return await getProducts(req, res, startTime, prisma);
+    return await getProducts(req, res, startTime);
     
   } catch (error) {
     console.error('❌ Products API Error:', error);
@@ -111,7 +103,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function getProducts(req, res, startTime, prisma) {
+async function getProducts(req, res, startTime) {
   try {
     // PERFORMANCE: Parse query parameters with defaults
     const { 
@@ -145,12 +137,13 @@ async function getProducts(req, res, startTime, prisma) {
           name: { equals: category, mode: 'insensitive' }
         }
       }),
-      ...(brand && brand !== 'All' && {
-        brandType: {
-          equals: brand,
-          mode: 'insensitive'
-        }
-      }),
+      // TEMPORARILY DISABLED: Brand filtering for debugging
+      // ...(brand && brand !== 'All' && {
+      //   brandType: {
+      //     equals: brand,
+      //     mode: 'insensitive'
+      //   }
+      // }),
       ...(featured === 'true' && { isFeatured: true })
     };
 
@@ -176,7 +169,7 @@ async function getProducts(req, res, startTime, prisma) {
           rating: true,
           reviewCount: true,
           isFeatured: true,
-          brandType: true,
+          // brandType: true, // TEMPORARILY DISABLED
           createdAt: true,
           category: {
             select: {
@@ -264,9 +257,7 @@ async function getProducts(req, res, startTime, prisma) {
       }
     });
   } finally {
-    if (prisma) {
-      await prisma.$disconnect();
-    }
+    // No need to disconnect when using shared prisma client
   }
 }
 
