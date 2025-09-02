@@ -35,21 +35,30 @@ const AdminOrdersPage = () => {
   const loadOrders = async (page = 1, search = '', status = 'all') => {
     try {
       setLoading(true);
+      console.log('loadOrders called with:', { page, search, status });
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
         ...(search && { search }),
         ...(status !== 'all' && { status })
       });
+      console.log('API request params:', params.toString());
 
       const response = await fetch(`/api/admin/orders?${params}`);
       const data = await response.json();
 
+      console.log('Admin orders API response:', data);
+      console.log('Total count received:', data.totalCount);
+      console.log('Orders count:', data.orders?.length);
+
       if (response.ok) {
         setOrders(data.orders || []);
         setTotalPages(data.totalPages || 1);
-        setTotalCount(data.totalCount || 0);
+        // Use orders.length as fallback if totalCount is 0 but orders exist
+        const finalTotalCount = data.totalCount || (data.orders?.length > 0 ? data.orders.length : 0);
+        setTotalCount(finalTotalCount);
         setCurrentPage(page);
+        console.log('State updated - totalCount:', finalTotalCount, 'orders.length:', data.orders?.length);
       } else {
         setError(data.error || 'Failed to load orders');
       }

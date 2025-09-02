@@ -87,7 +87,7 @@ async function getOrders(req, res) {
       ];
     }
     
-    if (status && status !== 'All') {
+    if (status && status !== 'all' && status !== 'All') {
       where.status = status;
     }
 
@@ -109,6 +109,21 @@ async function getOrders(req, res) {
     let orders, total;
     try {
       console.log('🔗 Connecting to database for orders...');
+      
+      // Test the count query separately first
+      console.log('🔍 Testing count query with where clause:', where);
+      const testCount = await prisma.order.count({ where });
+      console.log('🔍 Test count result:', testCount);
+      
+      // Also test total count without filters
+      const totalCountNoFilter = await prisma.order.count();
+      console.log('🔍 Total orders in database (no filters):', totalCountNoFilter);
+      
+      // If we have filters applied and the count is 0, but we have orders, 
+      // we might need to get the total count differently
+      if (Object.keys(where).length > 0 && testCount === 0 && totalCountNoFilter > 0) {
+        console.log('⚠️ Filtered count is 0 but total orders exist, this might indicate a filter issue');
+      }
       
       // Simplified query for better reliability
       [orders, total] = await Promise.all([
@@ -160,6 +175,12 @@ async function getOrders(req, res) {
     }
 
     console.log('getOrders - Found orders:', orders.length, 'Total:', total);
+    console.log('getOrders - Response data:', { 
+      ordersCount: orders.length, 
+      totalCount: total, 
+      page: parseInt(page), 
+      limit: parseInt(limit) 
+    });
 
     // Simplified data transformation for better reliability
     const transformedOrders = orders.map(order => ({
@@ -182,14 +203,41 @@ async function getOrders(req, res) {
       itemCount: order.items?.length || 0
     }));
 
-    return res.status(200).json({
+    // Ensure totalCount is never 0 if we have orders
+    // If the count query returned 0 but we have orders, use the orders length
+    // This handles cases where the count query might fail but the findMany works
+    let finalTotalCount = total;
+    if (total === 0 && transformedOrders.length > 0) {
+      console.log('⚠️ Count query returned 0 but orders exist, using orders.length as fallback');
+      finalTotalCount = transformedOrders.length;
+    }
+    
+    // If we're on the first page with no filters and still getting 0, 
+    // try to get the actual total count from the database
+    if (finalTotalCount === 0 && parseInt(page) === 1 && Object.keys(where).length === 0) {
+      console.log('🔍 No filters applied and count is 0, getting total count from database');
+      try {
+        const actualTotal = await prisma.order.count();
+        if (actualTotal > 0) {
+          console.log('🔍 Found actual total count:', actualTotal);
+          finalTotalCount = actualTotal;
+        }
+      } catch (countError) {
+        console.error('❌ Error getting total count:', countError);
+      }
+    }
+    
+    const responseData = {
       orders: transformedOrders,
-      total,
-      totalCount: total, // Add totalCount for frontend compatibility
+      total: finalTotalCount,
+      totalCount: finalTotalCount, // Ensure totalCount is properly set
       page: parseInt(page),
       limit: parseInt(limit),
-      totalPages: Math.ceil(total / parseInt(limit))
-    });
+      totalPages: Math.ceil(finalTotalCount / parseInt(limit))
+    };
+
+    console.log('getOrders - Final response:', responseData);
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Error fetching orders:', error);
     return res.status(500).json({ error: 'Failed to fetch orders' });
