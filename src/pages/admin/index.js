@@ -76,7 +76,10 @@ const AdminDashboard = () => {
       const [products, users, orders] = await Promise.all([
         productsResponse.ok ? productsResponse.json().then(data => data.products || []) : [],
         usersResponse.ok ? usersResponse.json().then(data => data.users || []) : [],
-        ordersResponse.ok ? ordersResponse.json().then(data => data.orders || []) : []
+        ordersResponse.ok ? ordersResponse.json().then(data => {
+          console.log('📊 Dashboard orders response:', data);
+          return data.orders || [];
+        }) : []
       ]);
 
       // Calculate total revenue safely
@@ -106,7 +109,9 @@ const AdminDashboard = () => {
       });
 
       // Set recent orders safely
+      console.log('📊 Dashboard orders data:', orders);
       const recent = orders?.slice(-5).reverse() || [];
+      console.log('📊 Dashboard recent orders:', recent);
       setRecentOrders(recent);
       
     } catch (error) {
