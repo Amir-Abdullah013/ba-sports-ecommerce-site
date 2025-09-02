@@ -138,10 +138,7 @@ async function getProducts(req, res, startTime) {
         }
       }),
       ...(brand && brand !== 'All' && {
-        brandType: {
-          equals: brand,
-          mode: 'insensitive'
-        }
+        brandType: brand
       }),
       ...(featured === 'true' && { isFeatured: true })
     };
