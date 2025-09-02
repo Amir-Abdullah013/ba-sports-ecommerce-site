@@ -5,8 +5,8 @@ import prisma from './prisma';
 export const authOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+      clientSecret: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           scope: 'openid email profile',
@@ -17,9 +17,9 @@ export const authOptions = {
       }
     })
   ],
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXT_PUBLIC_NEXTAUTH_SECRET,
   // PRODUCTION FIX: Explicit URL configuration for Vercel with proper protocol
-  url: process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
+  url: process.env.NEXT_PUBLIC_NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
   callbacks: {
     async jwt({ token, account, profile, trigger, session }) {
       // Handle account switching
@@ -48,7 +48,7 @@ export const authOptions = {
           const isAdminEmail = profile.email === 'amirabdullah2508@gmail.com';
           
           // PRODUCTION FIX: Shorter timeout for serverless functions
-          const dbTimeout = process.env.NODE_ENV === 'production' ? 5000 : 10000;
+          const dbTimeout = process.env.NEXT_PUBLIC_NODE_ENV === 'production' ? 5000 : 10000;
           
           // Find or create user in database with timeout
           let user = await Promise.race([
@@ -156,7 +156,7 @@ export const authOptions = {
       console.log('🔄 NextAuth redirect:', { url, baseUrl });
       
       // PRODUCTION FIX: Handle Vercel URLs properly
-      const productionBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+      const productionBaseUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || baseUrl;
       
       // Allows relative callback URLs
       if (url.startsWith("/")) {
@@ -186,7 +186,7 @@ export const authOptions = {
     signOut: '/auth/signout', 
     error: '/auth/error',
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NEXT_PUBLIC_NODE_ENV === 'development',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -224,7 +224,7 @@ export const authOptions = {
       console.warn('⚠️ NextAuth Warning:', code);
     },
     debug(code, metadata) {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
         console.log('🐛 NextAuth Debug:', { code, metadata });
       }
     }
