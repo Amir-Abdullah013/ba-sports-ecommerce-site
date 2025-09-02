@@ -183,9 +183,9 @@ const AdminOrdersPage = () => {
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-white/60 text-sm">Delivered</p>
+                  <p className="text-white/60 text-sm">Shipped/Delivered</p>
                   <p className="text-2xl font-bold text-green-400">
-                    {orders.filter(o => o.status === 'DELIVERED').length}
+                    {orders.filter(o => o.status === 'DELIVERED' || o.status === 'SHIPPED').length}
                   </p>
                 </div>
                 <FiCheckCircle className="w-8 h-8 text-green-400" />
