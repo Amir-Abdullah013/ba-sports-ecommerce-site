@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     console.error('❌ Admin products API error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -311,7 +311,7 @@ async function createProduct(req, res) {
     console.error('❌ Create product error:', error);
     return res.status(500).json({ 
       error: 'Failed to create product',
-      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -373,7 +373,7 @@ async function updateProduct(req, res) {
     console.error('❌ Update product error:', error);
     return res.status(500).json({ 
       error: 'Failed to update product',
-      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
@@ -398,7 +398,7 @@ async function deleteProduct(req, res) {
     
     return res.status(500).json({ 
       error: 'Failed to delete product',
-      details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }

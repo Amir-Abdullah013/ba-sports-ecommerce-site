@@ -16,34 +16,11 @@ export const config = {
   runtime: 'nodejs',
 };
 
-import prisma, { connectDatabase } from '../../../lib/prisma';
+import { PrismaClient } from '@prisma/client';
 
 export default async function handler(req, res) {
   const startTime = Date.now();
   
-  // LOCALHOST FIX: Validate environment variables first
-  if (!process.env.NEXT_PUBLIC_DATABASE_URL) {
-    console.error('❌ DATABASE_URL not found in environment variables');
-    return res.status(500).json({ 
-      products: [],
-      pagination: {
-        currentPage: 1,
-        totalPages: 0,
-        totalCount: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
-        limit: 20
-      },
-      meta: {
-        error: 'Database configuration missing',
-        message: 'Please check your .env.local file',
-        responseTime: Date.now() - startTime,
-        details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? 
-          'NEXT_PUBLIC_DATABASE_URL environment variable is required. Check your .env.local file.' : undefined 
-      }
-    });
-  }
-
   // LOCALHOST FIX: Only handle GET requests for products
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
@@ -53,11 +30,19 @@ export default async function handler(req, res) {
     });
   }
   
+  let prisma;
+  
   try {
-    // LOCALHOST FIX: Test database connection with better error handling
-    await connectDatabase(2);
+    // Create a simple Prisma client without complex configurations
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.NEXT_PUBLIC_DATABASE_URL,
+        },
+      },
+    });
     
-    return await getProducts(req, res, startTime);
+    return await getProducts(req, res, startTime, prisma);
     
   } catch (error) {
     console.error('❌ Products API Error:', error);
@@ -126,7 +111,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function getProducts(req, res, startTime) {
+async function getProducts(req, res, startTime, prisma) {
   try {
     // PERFORMANCE: Parse query parameters with defaults
     const { 
@@ -161,7 +146,10 @@ async function getProducts(req, res, startTime) {
         }
       }),
       ...(brand && brand !== 'All' && {
-        brandType: brand
+        brandType: {
+          equals: brand,
+          mode: 'insensitive'
+        }
       }),
       ...(featured === 'true' && { isFeatured: true })
     };
@@ -188,7 +176,7 @@ async function getProducts(req, res, startTime) {
           rating: true,
           reviewCount: true,
           isFeatured: true,
-          brandType: true, // NEW: Include brand type
+          brandType: true,
           createdAt: true,
           category: {
             select: {
@@ -275,6 +263,10 @@ async function getProducts(req, res, startTime) {
         details: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
       }
     });
+  } finally {
+    if (prisma) {
+      await prisma.$disconnect();
+    }
   }
 }
 

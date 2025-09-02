@@ -19,23 +19,13 @@ const globalForPrisma = globalThis;
  * Create Prisma client with optimized settings for Supabase
  */
 const createPrismaClient = () => {
-  const isProduction = process.env.NEXT_PUBLIC_NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === 'production';
   
   return new PrismaClient({
     log: isProduction ? ['error'] : ['query', 'error', 'warn'],
     datasources: {
       db: {
         url: process.env.NEXT_PUBLIC_DATABASE_URL,
-      },
-    },
-    // VERCEL PRODUCTION FIX: Optimized for serverless functions
-    __internal: {
-      engine: {
-        // Single connection for Vercel serverless
-        connectionLimit: 1,
-        // Shorter timeouts for serverless
-        queryTimeout: isProduction ? 30000 : 60000,
-        transactionTimeout: isProduction ? 15000 : 30000,
       },
     },
   });
