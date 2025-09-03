@@ -656,7 +656,7 @@ const CheckoutPage = () => {
             const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`.toUpperCase();
             
             // Calculate total based on payment method
-            const finalTotal = formData.paymentMethod === 'cod' ? cartTotal + 50 : cartTotal;
+            const finalTotal = cartTotal;
             
             // Store order details for payment success/cancel pages
             localStorage.setItem('lastOrderAmount', finalTotal.toString());
@@ -1131,23 +1131,19 @@ const CheckoutPage = () => {
                               <span className="text-white font-medium">{formatPrice(shipping)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-white/60"></span>
-                              <span className="text-white font-medium"></span>
-                            </div>
-                            <div className="flex justify-between">
                               <span className="text-white/60">Payment Method:</span>
                               <span className="font-medium text-green-400">
                                 Cash on Delivery
                               </span>
                             </div>
-                            <div className="border-t border-white/10 pt-2">
-                              <div className="flex justify-between">
-                                <span className="text-white font-semibold">Total to Pay:</span>
-                                <span className="text-white font-bold text-lg">
-                                  {formatPrice(total + 50)}
-                                </span>
+                                                          <div className="border-t border-white/10 pt-2">
+                                <div className="flex justify-between">
+                                  <span className="text-white font-semibold">Total to Pay:</span>
+                                  <span className="text-white font-bold text-lg">
+                                    {formatPrice(total)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
                           </div>
                         </div>
 
@@ -1369,17 +1365,11 @@ const CheckoutPage = () => {
                     <span>Shipping:</span>
                     <span>{formatPrice(shipping)}</span>
                   </div>
-                  {formData.paymentMethod === 'cod' && (
-                    <div className="flex justify-between">
-                      <span></span>
-                      <span></span>
-                    </div>
-                  )}
 
                   <div className="border-t border-white/20 pt-3">
                     <div className="flex justify-between font-bold text-lg text-white">
                       <span>Total:</span>
-                      <span>{formatPrice(formData.paymentMethod === 'cod' ? total + 50 : total)}</span>
+                      <span>{formatPrice(total)}</span>
                     </div>
                   </div>
                 </div>

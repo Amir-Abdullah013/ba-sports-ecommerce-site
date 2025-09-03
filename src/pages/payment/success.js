@@ -349,12 +349,7 @@ const PaymentSuccessPage = () => {
                     <span>Shipping:</span>
                     <span>${formatReceiptPrice(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) > 50 ? 0 : 9.99)}</span>
                 </div>
-                ${receiptData.paymentMethod === 'cod' ? `
-                <div class="total-row">
-                    <span></span>
-                    <span></span>
-                </div>
-                ` : ''}
+
                 <div class="total-row">
                     <span>Total Amount:</span>
                     <span>${formatReceiptPrice(receiptData.amount)}</span>
@@ -535,12 +530,7 @@ const PaymentSuccessPage = () => {
                       <span className="text-white/60">Shipping:</span>
                       <span className="text-white">{formatPrice(orderDetails.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) > 50 ? 0 : 9.99)}</span>
                     </div>
-                    {orderDetails.paymentMethod === 'cod' && (
-                      <div className="flex justify-between">
-                        <span className="text-white/60"></span>
-                        <span className="text-white"></span>
-                      </div>
-                    )}
+
                     <div className="flex justify-between font-bold text-lg border-t border-white/20 pt-2">
                       <span className="text-white">Total:</span>
                       <span className="text-white">{formatPrice(orderDetails.amount)}</span>
