@@ -1131,8 +1131,8 @@ const CheckoutPage = () => {
                               <span className="text-white font-medium">{formatPrice(shipping)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-white/60">COD Fee:</span>
-                              <span className="text-white font-medium">{formatPrice(50)}</span>
+                              <span className="text-white/60"></span>
+                              <span className="text-white font-medium"></span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-white/60">Payment Method:</span>
@@ -1371,8 +1371,8 @@ const CheckoutPage = () => {
                   </div>
                   {formData.paymentMethod === 'cod' && (
                     <div className="flex justify-between">
-                      <span>COD Fee:</span>
-                      <span>{formatPrice(50)}</span>
+                      <span></span>
+                      <span></span>
                     </div>
                   )}
 

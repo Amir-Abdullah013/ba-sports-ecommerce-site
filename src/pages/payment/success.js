@@ -351,8 +351,8 @@ const PaymentSuccessPage = () => {
                 </div>
                 ${receiptData.paymentMethod === 'cod' ? `
                 <div class="total-row">
-                    <span>COD Fee:</span>
-                    <span>${formatReceiptPrice(50)}</span>
+                    <span></span>
+                    <span></span>
                 </div>
                 ` : ''}
                 <div class="total-row">
@@ -537,8 +537,8 @@ const PaymentSuccessPage = () => {
                     </div>
                     {orderDetails.paymentMethod === 'cod' && (
                       <div className="flex justify-between">
-                        <span className="text-white/60">COD Fee:</span>
-                        <span className="text-white">{formatPrice(50)}</span>
+                        <span className="text-white/60"></span>
+                        <span className="text-white"></span>
                       </div>
                     )}
                     <div className="flex justify-between font-bold text-lg border-t border-white/20 pt-2">
