@@ -267,6 +267,11 @@ const AdminAnalytics = () => {
                   <div className="text-sm font-medium mt-1">
                     {formatGrowth(analytics.usersGrowth)}
                   </div>
+                  {analytics.nonAdminUsers > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Customers: {analytics.nonAdminUsers}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 bg-gradient-to-r from-purple-500 to-violet-600 rounded-lg">
                   <FiUsers size={24} className="text-white" />

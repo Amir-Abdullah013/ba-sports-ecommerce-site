@@ -68,12 +68,8 @@ export default async function handler(req, res) {
       // Total orders count
       prisma.order.count(),
 
-      // Total users (excluding admins)
-      prisma.user.count({
-        where: {
-          role: { not: 'ADMIN' }
-        }
-      }),
+      // Total users (all users)
+      prisma.user.count(),
 
       // Total active products
       prisma.product.count({
@@ -220,6 +216,13 @@ export default async function handler(req, res) {
       _sum: { total: true }
     });
 
+    // Get non-admin users count for reference
+    const nonAdminUsers = await prisma.user.count({
+      where: {
+        role: { not: 'ADMIN' }
+      }
+    });
+
     const currentOrderCount = totalOrders;
     const prevOrderCount = previousMonthOrders;
     const ordersGrowth = prevOrderCount > 0 ? ((currentOrderCount - prevOrderCount) / prevOrderCount * 100) : 0;
@@ -230,6 +233,7 @@ export default async function handler(req, res) {
       completedRevenue: parseFloat(completedRevenue._sum.total) || 0,
       totalOrders: currentOrderCount,
       totalUsers: totalUsers,
+      nonAdminUsers: nonAdminUsers,
       totalProducts: totalProducts,
 
       // Growth percentages
