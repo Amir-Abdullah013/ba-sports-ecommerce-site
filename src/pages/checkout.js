@@ -1123,8 +1123,16 @@ const CheckoutPage = () => {
                           <h4 className="text-lg font-semibold text-white mb-3">Payment Summary</h4>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-white/60">Order Total:</span>
-                              <span className="text-white font-medium">$ {total.toFixed(2)}</span>
+                              <span className="text-white/60">Subtotal:</span>
+                              <span className="text-white font-medium">{formatPrice(subtotal)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-white/60">Shipping:</span>
+                              <span className="text-white font-medium">{formatPrice(shipping)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-white/60">COD Fee:</span>
+                              <span className="text-white font-medium">{formatPrice(50)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-white/60">Payment Method:</span>
@@ -1132,15 +1140,11 @@ const CheckoutPage = () => {
                                 Cash on Delivery
                               </span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-white/60">Processing Fee:</span>
-                              <span className="text-white font-medium">$ 0.00</span>
-                            </div>
                             <div className="border-t border-white/10 pt-2">
                               <div className="flex justify-between">
                                 <span className="text-white font-semibold">Total to Pay:</span>
                                 <span className="text-white font-bold text-lg">
-                                  $ {total.toFixed(2)}
+                                  {formatPrice(total + 50)}
                                 </span>
                               </div>
                             </div>
@@ -1363,13 +1367,19 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>0.00</span>
+                    <span>{formatPrice(shipping)}</span>
                   </div>
+                  {formData.paymentMethod === 'cod' && (
+                    <div className="flex justify-between">
+                      <span>COD Fee:</span>
+                      <span>{formatPrice(50)}</span>
+                    </div>
+                  )}
 
                   <div className="border-t border-white/20 pt-3">
                     <div className="flex justify-between font-bold text-lg text-white">
                       <span>Total:</span>
-                      <span>{formatPrice(total)}</span>
+                      <span>{formatPrice(formData.paymentMethod === 'cod' ? total + 50 : total)}</span>
                     </div>
                   </div>
                 </div>

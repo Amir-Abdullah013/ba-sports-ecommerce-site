@@ -27,7 +27,7 @@ const PaymentSuccessPage = () => {
         transactionId: transaction_id || 'N/A',
         orderId: order_id,
         status: status || 'SUCCESS',
-        amount: amount || localStorage.getItem('lastOrderAmount') || '0',
+        amount: parseFloat(amount || localStorage.getItem('lastOrderAmount') || '0'),
         items: JSON.parse(localStorage.getItem('lastOrderItems') || '[]'),
         customerEmail: localStorage.getItem('lastOrderEmail') || '',
         paymentMethod: payment_method || localStorage.getItem('lastOrderPaymentMethod') || 'cod'
@@ -44,7 +44,7 @@ const PaymentSuccessPage = () => {
     const receiptData = {
       orderId: orderDetails?.orderId,
       transactionId: orderDetails?.transactionId,
-      amount: orderDetails?.amount,
+      amount: parseFloat(orderDetails?.amount || 0),
       date: new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -347,11 +347,7 @@ const PaymentSuccessPage = () => {
                 </div>
                 <div class="total-row">
                     <span>Shipping:</span>
-                    <span>Free</span>
-                </div>
-                <div class="total-row">
-                    <span>Tax:</span>
-                    <span>${formatReceiptPrice(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.08)}</span>
+                    <span>${formatReceiptPrice(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) > 50 ? 0 : 9.99)}</span>
                 </div>
                 ${receiptData.paymentMethod === 'cod' ? `
                 <div class="total-row">
@@ -491,8 +487,64 @@ const PaymentSuccessPage = () => {
                     <p className="text-white font-medium">{formatPrice(orderDetails.amount)}</p>
                   </div>
                   <div>
+                    <p className="text-white/60 text-sm">Items</p>
+                    <p className="text-white font-medium">{orderDetails.items.length} item{orderDetails.items.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div>
                     <p className="text-white/60 text-sm">Status</p>
                     <p className="text-green-400 font-medium">{orderDetails.status}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Order Breakdown */}
+            {orderDetails && orderDetails.items && orderDetails.items.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 mb-8"
+              >
+                <h3 className="text-xl font-semibold text-white mb-4">Order Breakdown</h3>
+                <div className="space-y-3">
+                  {orderDetails.items.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          className="w-12 h-12 object-cover rounded-lg"
+                        />
+                        <div>
+                          <p className="text-white font-medium">{item.name}</p>
+                          <p className="text-white/60 text-sm">Qty: {item.quantity}</p>
+                        </div>
+                      </div>
+                      <p className="text-white font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-white/20">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Subtotal:</span>
+                      <span className="text-white">{formatPrice(orderDetails.items.reduce((sum, item) => sum + (item.price * item.quantity), 0))}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Shipping:</span>
+                      <span className="text-white">{formatPrice(orderDetails.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) > 50 ? 0 : 9.99)}</span>
+                    </div>
+                    {orderDetails.paymentMethod === 'cod' && (
+                      <div className="flex justify-between">
+                        <span className="text-white/60">COD Fee:</span>
+                        <span className="text-white">{formatPrice(50)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-lg border-t border-white/20 pt-2">
+                      <span className="text-white">Total:</span>
+                      <span className="text-white">{formatPrice(orderDetails.amount)}</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
