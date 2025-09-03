@@ -35,7 +35,7 @@ const TermsOfService = () => {
         'Payment Methods: We accept various payment methods including credit cards, debit cards, and digital wallets.',
         'Payment Processing: All payments are processed securely through encrypted payment gateways.',
         'Billing: You agree to pay all charges incurred by you or any users of your account at the prices in effect when such charges are incurred.',
-        'Currency: All prices are displayed in Pakistani Rupees (PKR) unless otherwise specified.',
+        'Currency: All prices are displayed in US Dollars (USD) unless otherwise specified.',
         'Payment Failure: If payment fails or is declined, we reserve the right to cancel your order.'
       ]
     },

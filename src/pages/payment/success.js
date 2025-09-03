@@ -9,6 +9,14 @@ const PaymentSuccessPage = () => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Add formatPrice function to match other pages
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  };
+
   useEffect(() => {
     // Get order details from URL parameters or localStorage
     const { transaction_id, order_id, status, payment_method, amount } = router.query;
@@ -45,8 +53,16 @@ const PaymentSuccessPage = () => {
         minute: '2-digit'
       }),
       items: orderDetails?.items || [],
-              paymentMethod: orderDetails?.paymentMethod || 'cod',
+      paymentMethod: orderDetails?.paymentMethod || 'cod',
       customerEmail: orderDetails?.customerEmail || ''
+    };
+
+    // Helper function for formatting prices in receipt
+    const formatReceiptPrice = (price) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(price);
     };
 
     // Create beautiful HTML receipt
@@ -317,8 +333,8 @@ const PaymentSuccessPage = () => {
                         <tr>
                             <td class="item-name">${item.name}</td>
                             <td>${item.quantity}</td>
-                            <td class="item-price">PKR ${item.price.toFixed(2)}</td>
-                            <td class="item-price">PKR ${(item.price * item.quantity).toFixed(2)}</td>
+                            <td class="item-price">${formatReceiptPrice(item.price)}</td>
+                            <td class="item-price">${formatReceiptPrice(item.price * item.quantity)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -327,7 +343,7 @@ const PaymentSuccessPage = () => {
             <div class="total-section">
                 <div class="total-row">
                     <span>Subtotal:</span>
-                    <span>PKR ${(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)).toFixed(2)}</span>
+                    <span>${formatReceiptPrice(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0))}</span>
                 </div>
                 <div class="total-row">
                     <span>Shipping:</span>
@@ -335,17 +351,17 @@ const PaymentSuccessPage = () => {
                 </div>
                 <div class="total-row">
                     <span>Tax:</span>
-                    <span>PKR ${(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.08).toFixed(2)}</span>
+                    <span>${formatReceiptPrice(receiptData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.08)}</span>
                 </div>
                 ${receiptData.paymentMethod === 'cod' ? `
                 <div class="total-row">
                     <span>COD Fee:</span>
-                    <span>PKR 50.00</span>
+                    <span>${formatReceiptPrice(50)}</span>
                 </div>
                 ` : ''}
                 <div class="total-row">
                     <span>Total Amount:</span>
-                    <span>PKR ${receiptData.amount}</span>
+                    <span>${formatReceiptPrice(receiptData.amount)}</span>
                 </div>
             </div>
             
@@ -472,7 +488,7 @@ const PaymentSuccessPage = () => {
                   </div>
                   <div>
                     <p className="text-white/60 text-sm">Amount</p>
-                    <p className="text-white font-medium">PKR {orderDetails.amount}</p>
+                    <p className="text-white font-medium">{formatPrice(orderDetails.amount)}</p>
                   </div>
                   <div>
                     <p className="text-white/60 text-sm">Status</p>

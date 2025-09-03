@@ -45,7 +45,7 @@ const SupportPage = () => {
         },
         {
           question: 'What are your shipping options and costs?',
-          answer: 'We offer standard shipping (3-5 business days) and express shipping (1-2 business days) throughout Pakistan. Shipping costs vary by location and weight. Free shipping is available on orders over PKR 2,000.'
+          answer: 'We offer standard shipping (3-5 business days) and express shipping (1-2 business days) throughout Pakistan. Shipping costs vary by location and weight. Free shipping is available on orders over $50.'
         },
         {
           question: 'Can I change or cancel my order?',
