@@ -60,11 +60,8 @@ export default async function handler(req, res) {
       previousMonthRevenue,
       previousMonthOrders
     ] = await Promise.all([
-      // Total revenue from all completed orders
+      // Total revenue from all orders (not just completed)
       prisma.order.aggregate({
-        where: {
-          paymentStatus: 'COMPLETED'
-        },
         _sum: { total: true }
       }),
 
@@ -83,7 +80,7 @@ export default async function handler(req, res) {
         where: { isActive: true }
       }),
 
-      // Monthly revenue for the last 12 months
+      // Monthly revenue for the last 12 months (all orders)
       prisma.$queryRaw`
         SELECT 
           EXTRACT(YEAR FROM "createdAt") as year,
@@ -92,7 +89,6 @@ export default async function handler(req, res) {
           COUNT(*) as orders
         FROM orders 
         WHERE "createdAt" >= ${new Date(now.getFullYear() - 1, now.getMonth(), 1)}
-          AND "paymentStatus" = 'COMPLETED'
         GROUP BY EXTRACT(YEAR FROM "createdAt"), EXTRACT(MONTH FROM "createdAt")
         ORDER BY year, month
       `,
@@ -145,10 +141,9 @@ export default async function handler(req, res) {
         ORDER BY year, month
       `,
 
-      // Previous month revenue for comparison
+      // Previous month revenue for comparison (all orders)
       prisma.order.aggregate({
         where: {
-          paymentStatus: 'COMPLETED',
           createdAt: {
             gte: lastMonth,
             lt: currentMonth
@@ -219,6 +214,12 @@ export default async function handler(req, res) {
     const prevRevenue = parseFloat(previousMonthRevenue._sum.total) || 0;
     const revenueGrowth = prevRevenue > 0 ? ((currentRevenue - prevRevenue) / prevRevenue * 100) : 0;
 
+    // Also get completed revenue for reference
+    const completedRevenue = await prisma.order.aggregate({
+      where: { paymentStatus: 'COMPLETED' },
+      _sum: { total: true }
+    });
+
     const currentOrderCount = totalOrders;
     const prevOrderCount = previousMonthOrders;
     const ordersGrowth = prevOrderCount > 0 ? ((currentOrderCount - prevOrderCount) / prevOrderCount * 100) : 0;
@@ -226,6 +227,7 @@ export default async function handler(req, res) {
     const analytics = {
       // Main stats
       totalRevenue: currentRevenue,
+      completedRevenue: parseFloat(completedRevenue._sum.total) || 0,
       totalOrders: currentOrderCount,
       totalUsers: totalUsers,
       totalProducts: totalProducts,

@@ -218,6 +218,11 @@ const AdminAnalytics = () => {
                   <div className="text-sm font-medium mt-1">
                     {formatGrowth(analytics.revenueGrowth)}
                   </div>
+                  {analytics.completedRevenue > 0 && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Completed: {formatPrice(analytics.completedRevenue)}
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg">
                   <FiDollarSign size={24} className="text-white" />
