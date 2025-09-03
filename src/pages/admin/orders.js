@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { FiPackage, FiTruck, FiCheckCircle, FiXCircle, FiEye, FiEdit, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { FiPackage, FiTruck, FiCheckCircle, FiXCircle, FiEye, FiEdit, FiTrash2, FiRefreshCw, FiMapPin, FiPhone, FiMail, FiUser } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 
 const AdminOrdersPage = () => {
@@ -15,6 +15,8 @@ const AdminOrdersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [updatingOrder, setUpdatingOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // Check admin access
   useEffect(() => {
@@ -326,7 +328,14 @@ const AdminOrdersPage = () => {
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                      <tr 
+                        key={order.id} 
+                        className="hover:bg-white/5 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowOrderModal(true);
+                        }}
+                      >
                         <td className="px-6 py-4 text-white font-medium">{order.orderNumber}</td>
                         <td className="px-6 py-4">
                           <div>
@@ -351,13 +360,26 @@ const AdminOrdersPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                setShowOrderModal(true);
+                              }}
+                              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                            >
+                              <FiEye className="w-4 h-4 inline mr-1" />
+                              View
+                            </button>
                             <select
                               value={order.status}
                               onChange={(e) => {
+                                e.stopPropagation();
                                 console.log('Status change for order', order.id, 'from', order.status, 'to', e.target.value);
                                 handleStatusUpdate(order.id, e.target.value);
                               }}
                               disabled={updatingOrder === order.id}
+                              onClick={(e) => e.stopPropagation()}
                               className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 cursor-pointer min-w-[140px] hover:bg-white/20 transition-colors"
                               style={{ 
                                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
@@ -414,6 +436,166 @@ const AdminOrdersPage = () => {
           )}
         </div>
       </div>
+
+      {/* Order Detail Modal */}
+      {showOrderModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-gray-900 border border-white/20 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6 border-b border-white/20">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">Order Details</h2>
+                <button
+                  onClick={() => {
+                    setShowOrderModal(false);
+                    setSelectedOrder(null);
+                  }}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <FiXCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Order Information */}
+                <div className="space-y-4">
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <FiPackage className="w-5 h-5 mr-2" />
+                      Order Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Order Number:</span>
+                        <span className="text-white font-medium">{selectedOrder.orderNumber}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Status:</span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
+                          {getStatusIcon(selectedOrder.status)}
+                          <span className="ml-1">{selectedOrder.status}</span>
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Payment Method:</span>
+                        <span className="text-white">{selectedOrder.paymentMethod}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Total Amount:</span>
+                        <span className="text-white font-medium">${selectedOrder.total?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Order Date:</span>
+                        <span className="text-white">{new Date(selectedOrder.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Customer Information */}
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <FiUser className="w-5 h-5 mr-2" />
+                      Customer Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center">
+                        <FiUser className="w-4 h-4 text-white/60 mr-2" />
+                        <span className="text-white font-medium">{selectedOrder.customerName}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <FiMail className="w-4 h-4 text-white/60 mr-2" />
+                        <span className="text-white">{selectedOrder.customerEmail}</span>
+                      </div>
+                      {selectedOrder.customerPhone && (
+                        <div className="flex items-center">
+                          <FiPhone className="w-4 h-4 text-white/60 mr-2" />
+                          <span className="text-white">{selectedOrder.customerPhone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipping Information */}
+                <div className="space-y-4">
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                      <FiMapPin className="w-5 h-5 mr-2" />
+                      Shipping Information
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      {selectedOrder.shippingAddress && (
+                        <div>
+                          <span className="text-white/60">Address:</span>
+                          <p className="text-white">{selectedOrder.shippingAddress}</p>
+                        </div>
+                      )}
+                      {selectedOrder.shippingCity && (
+                        <div className="flex justify-between">
+                          <span className="text-white/60">City:</span>
+                          <span className="text-white">{selectedOrder.shippingCity}</span>
+                        </div>
+                      )}
+                      {selectedOrder.shippingState && (
+                        <div className="flex justify-between">
+                          <span className="text-white/60">State/Province:</span>
+                          <span className="text-white">{selectedOrder.shippingState}</span>
+                        </div>
+                      )}
+                      {selectedOrder.shippingZipCode && (
+                        <div className="flex justify-between">
+                          <span className="text-white/60">ZIP Code:</span>
+                          <span className="text-white">{selectedOrder.shippingZipCode}</span>
+                        </div>
+                      )}
+                      {selectedOrder.shippingCountry && (
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Country:</span>
+                          <span className="text-white">{selectedOrder.shippingCountry}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Order Items</h3>
+                    <div className="space-y-3">
+                      {selectedOrder.items?.map((item, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            {item.product?.image && (
+                              <img 
+                                src={item.product.image} 
+                                alt={item.product.name}
+                                className="w-12 h-12 object-cover rounded-lg"
+                              />
+                            )}
+                            <div>
+                              <p className="text-white font-medium">{item.product?.name || 'Product'}</p>
+                              <p className="text-white/60 text-sm">Qty: {item.quantity}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-white font-medium">${item.price?.toFixed(2) || '0.00'}</p>
+                            <p className="text-white/60 text-sm">Total: ${item.total?.toFixed(2) || '0.00'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </Layout>
   );
 };

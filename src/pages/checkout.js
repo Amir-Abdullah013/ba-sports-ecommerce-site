@@ -1363,7 +1363,7 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+                    <span>0.00</span>
                   </div>
 
                   <div className="border-t border-white/20 pt-3">
