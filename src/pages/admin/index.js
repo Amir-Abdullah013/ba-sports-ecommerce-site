@@ -179,13 +179,7 @@ const AdminDashboard = () => {
       color: 'from-purple-500 to-violet-600',
       change: stats.totalProducts > 0 ? `${stats.totalProducts} products` : 'No products yet'
     },
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: FiUsers,
-      color: 'from-orange-500 to-red-600',
-      change: stats.totalUsers > 0 ? `${stats.totalUsers} customers` : 'No customers yet'
-    }
+    
   ];
 
   const quickActions = [
