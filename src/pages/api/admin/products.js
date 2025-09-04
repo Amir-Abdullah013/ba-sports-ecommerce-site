@@ -399,15 +399,52 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.query;
 
+    console.log(`🔍 Attempting to delete product: ${id}`);
+
+    // First check if product exists
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, name: true }
+    });
+
+    if (!product) {
+      console.log(`❌ Product not found: ${id}`);
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Check for related order items
+    const orderItems = await prisma.orderItem.findMany({
+      where: { productId: id },
+      select: { id: true, orderId: true }
+    });
+
+    if (orderItems.length > 0) {
+      console.log(`⚠️ Product has ${orderItems.length} associated order items, deleting them first`);
+      
+      // Delete related order items first
+      await prisma.orderItem.deleteMany({
+        where: { productId: id }
+      });
+    }
+
+    // Now delete the product
     await prisma.product.delete({
       where: { id }
     });
 
-    console.log(`✅ Product deleted: ${id}`);
-    return res.status(200).json({ message: 'Product deleted successfully' });
+    console.log(`✅ Product deleted successfully: ${id}`);
+    return res.status(200).json({ 
+      message: 'Product deleted successfully',
+      deletedOrderItems: orderItems.length
+    });
 
   } catch (error) {
     console.error('❌ Delete product error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
